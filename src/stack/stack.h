@@ -1,6 +1,6 @@
 #include "../include/header.h"
 
-#define STACK_MAX_ITEMS 5
+#define STACK_MAX_ITEMS 100
 #define STACK_MIN_ITEMS -1
 
 /*
@@ -25,4 +25,9 @@ int stack_list(stack_st *st);
 stack_st * stack_alloc_stack(size_t len);
 int stack_dealloc_stack(stack_st *st);
 void *stack_get_new_node(size_t len);
+
+/*
+ * Function declarations for problems solved.
+ */
+int stack_prob_1(char *input);
 

@@ -60,8 +60,10 @@ int main(int argc, char *argv[])
 {
 
 	int rc = EOK;
+	char str[] = "GeeksForGeeks";
 
 	rc = stack_test_case1();
+	rc = stack_prob_1(str);
 
 	return rc;
 
