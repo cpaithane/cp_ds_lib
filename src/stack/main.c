@@ -65,6 +65,12 @@ int main(int argc, char *argv[])
 	rc = stack_test_case1();
 	rc = stack_prob_1(str);
 
+	char postfix_str[] = "231*+9-";
+	rc = stack_prob_2(postfix_str);
+
+	char infix_str[] = "a+b*(c^d-e)^(f+g*h)-i";
+	rc = stack_prob_3(infix_str);
+
 	return rc;
 
 }

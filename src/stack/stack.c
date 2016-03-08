@@ -84,6 +84,22 @@ void stack_initialize(stack_st *st)
 }
 
 /*
+ * This function returns element stored at top of stack.
+ */
+void *stack_get_peek(stack_st *st)
+{
+
+	void *data = NULL;
+	if (!stack_is_stack_empty(st))
+	{
+		data = st->st_node[st->st_top];
+	}
+
+	return data;
+
+}
+
+/*
  * This function checks whether the new node is pushable on stack or not.
  */
 int stack_is_stack_full(stack_st *st)
