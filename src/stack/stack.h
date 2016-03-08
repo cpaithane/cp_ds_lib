@@ -33,4 +33,5 @@ void *stack_get_peek(stack_st *st);
 int stack_prob_1(char *input);
 int stack_prob_2(char *input);
 int stack_prob_3(char *input);
+int stack_prob_4(char *input);
 

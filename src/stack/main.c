@@ -71,6 +71,12 @@ int main(int argc, char *argv[])
 	char infix_str[] = "a+b*(c^d-e)^(f+g*h)-i";
 	rc = stack_prob_3(infix_str);
 
+	char parantheses1[] = ")()";
+	rc = stack_prob_4(parantheses1);
+
+	char parantheses2[] = "[{()}]";
+	rc = stack_prob_4(parantheses2);
+
 	return rc;
 
 }
