@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 	char parantheses2[] = "[{()}]";
 	rc = stack_prob_4(parantheses2);
 
+	rc = stack_prob_6();
 	return rc;
 
 }
