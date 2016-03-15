@@ -231,3 +231,21 @@ int stack_int_data_compare(const void *data1, const void *data2)
 
 }
 
+/*
+ * This function pops all the element and deallocates stack.
+ */
+int stack_make_stack_empty(stack_st *st_main)
+{
+
+	int rc = EOK;
+
+	while (!stack_is_stack_empty(st_main))
+	{
+		stack_pop(st_main, &rc);
+	}
+
+	stack_dealloc_stack(st_main);
+	return rc;
+
+}
+

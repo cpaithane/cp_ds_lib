@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
 	rc = stack_prob_6();
 	rc = stack_prob_7();
 	rc = stack_prob_8();
+	rc = stack_prob_9();
 	return rc;
 
 }

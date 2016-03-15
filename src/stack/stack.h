@@ -29,6 +29,7 @@ int stack_dealloc_stack(stack_st *st);
 void *stack_get_new_node(size_t len);
 void *stack_get_peek(stack_st *st);
 int stack_int_data_compare(const void *data1, const void *data2);
+int stack_make_stack_empty(stack_st *st_main);
 
 /*
  * Function declarations for problems solved.
@@ -41,4 +42,5 @@ int stack_prob_5();
 int stack_prob_6();
 int stack_prob_7();
 int stack_prob_8();
+int stack_prob_9();
 
