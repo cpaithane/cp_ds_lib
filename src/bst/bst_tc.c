@@ -269,7 +269,7 @@ int bst_test_case8()
 
 }
 
-int main()
+int bst_tc_execute()
 {
 
 	int rc = EOK;

@@ -155,7 +155,7 @@ int scll_test_case5()
 
 }
 
-int main(int argc, char **argv)
+int scll_tc_execute()
 {
 
 	int rc = EOK;

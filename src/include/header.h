@@ -36,3 +36,13 @@ do {\
 	\
 }while(0)
 
+/*
+ * Following functions are entry points for test cases.
+ */
+int stack_tc_execute();
+int queue_tc_execute();
+int bst_tc_execute();
+int sll_tc_execute();
+int dll_tc_execute();
+int scll_tc_execute();
+

@@ -269,7 +269,7 @@ int bst_test_case8()
 
 }
 
-int main()
+int avl_tree_tc_execute()
 {
 
 	int rc = EOK;

@@ -56,7 +56,7 @@ int stack_test_case1()
 
 }
 
-int main(int argc, char *argv[])
+int stack_tc_execute()
 {
 
 	int rc = EOK;

@@ -142,7 +142,7 @@ int dll_test_case4()
 
 }
 
-int main()
+int dll_tc_execute()
 {
 
 	int rc = EOK;

@@ -248,7 +248,7 @@ int sll_test_case6()
 	CHECK_RC_ASSERT(rc, EOK);
 }
 
-int main()
+int sll_tc_execute()
 {
 
 	int rc = EOK;

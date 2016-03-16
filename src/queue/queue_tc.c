@@ -117,7 +117,7 @@ int queue_test_case2()
 
 }
 
-int main(int argc, char **argv)
+int queue_tc_execute()
 {
 
 	int rc = EOK;
