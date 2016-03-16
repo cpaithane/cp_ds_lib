@@ -44,4 +44,6 @@ int stack_prob_7();
 int stack_prob_8();
 int stack_prob_9();
 int stack_prob_10();
+int stack_prob_11();
+int stack_prob_12();
 
