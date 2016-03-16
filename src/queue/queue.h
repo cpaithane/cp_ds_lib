@@ -1,6 +1,6 @@
 #include "../include/header.h"
 
-#define QUEUE_MAX_ITEMS 5
+#define QUEUE_MAX_ITEMS 100
 #define QUEUE_MIN_ITEMS -1
 
 /*

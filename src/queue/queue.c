@@ -241,6 +241,7 @@ void *queue_deque(queue_st *q, int *status)
 	CHECK_RC_ASSERT(rc, ENOTEMPTY);
 	node = q->q_node[q->q_front];
 	(q->q_front)++;
+	*status = EOK;
 	return node;
 
 }
