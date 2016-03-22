@@ -151,6 +151,7 @@ int dll_tc_execute()
 	rc = dll_test_case2();
 	rc = dll_test_case3();
 	rc = dll_test_case4();
+	rc = dll_prob_1();
 	return rc;
 
 }

@@ -260,6 +260,7 @@ int sll_tc_execute()
 	rc = sll_test_case5();
 	rc = sll_test_case6(); 
 	rc = ssl_prob_1();
+	rc = sll_prob_2();
 
 	return rc;
 

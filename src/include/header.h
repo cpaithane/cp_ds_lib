@@ -38,6 +38,12 @@ do {\
 }while(0)
 
 /*
+ * Common APIs to be used.
+ */
+typedef int (*common_data_compare_t)(const void *, const void *);
+int common_int_data_compare(const void *data1, const void *data2);
+
+/*
  * Following functions are entry points for test cases.
  */
 int stack_tc_execute();

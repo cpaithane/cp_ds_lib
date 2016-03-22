@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-SUBDIRS := bst dll queue scll sll stack
+SUBDIRS := common bst dll queue scll sll stack
 
 .PHONY : all $(SUBDIRS)
 

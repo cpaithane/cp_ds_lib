@@ -33,4 +33,5 @@ int sll_print_sll(sll_st *head);
  * APIs for problems solved
  */
 int ssl_prob_1();
+int ssl_prob_2();
 
