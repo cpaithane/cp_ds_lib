@@ -29,3 +29,8 @@ sll_st *sll_remove_node_pos(sll_st *head, int position);
 
 int sll_print_sll(sll_st *head);
 
+/*
+ * APIs for problems solved
+ */
+int ssl_prob_1();
+

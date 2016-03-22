@@ -1,4 +1,4 @@
-OBJS = stack_tc.o stack.o stack_prob_1.o stack_prob_2.o stack_prob_3.o stack_prob_4.o stack_prob_5.o stack_prob_6.o stack_prob_7.o stack_prob_8.o stack_prob_9.o stack_prob_10.o stack_prob_11.o stack_prob_12.o
+OBJS = stack_tc.o stack.o stack_prob_1.o stack_prob_2.o stack_prob_3.o stack_prob_4.o stack_prob_5.o stack_prob_6.o stack_prob_7.o stack_prob_8.o stack_prob_9.o stack_prob_10.o stack_prob_11.o stack_prob_12.o stack_prob_13.o
 
 all:
 	cc -g -O0 -c -o stack_tc.o stack_tc.c
@@ -15,6 +15,7 @@ all:
 	cc -g -O0 -c -o stack_prob_10.o stack_prob_10.c
 	cc -g -O0 -c -o stack_prob_11.o stack_prob_11.c
 	cc -g -O0 -c -o stack_prob_12.o stack_prob_12.c
+	cc -g -O0 -c -o stack_prob_13.o stack_prob_13.c
 
 clean:
 	rm -rf stack *.o

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#include <limits.h>
 
 #define EOK 0
 #define MAX_INT ((unsigned int)(-1))

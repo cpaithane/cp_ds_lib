@@ -85,6 +85,7 @@ int stack_tc_execute()
 	rc = stack_prob_10();
 	rc = stack_prob_11();
 	rc = stack_prob_12();
+	rc = stack_prob_13();
 	return rc;
 
 }
