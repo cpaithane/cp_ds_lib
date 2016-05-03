@@ -1,10 +1,10 @@
 #include "avl.h"
 
-extern bst_st *bst_root;
+extern avl_st *avl_root;
 /*
  * This test case tests insertion with 7 nodes in rightmost side.
  */
-int bst_test_case1()
+int avl_test_case1()
 {
 
 	int rc = EOK;
@@ -14,15 +14,15 @@ int bst_test_case1()
 	for (i = 0; i < 7; i++)
 	{
 
-		bst_insert(bst_root, &i, sizeof(int), bst_int_data_compare);
-		bst_check_sanity(bst_root);
+		avl_insert(avl_root, &i, sizeof(int), common_int_data_compare);
+		avl_check_sanity(avl_root);
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
-	bst_destroy_tree(bst_root);
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
+	avl_destroy_tree(avl_root);
+	avl_root = NULL;
+	CHECK_RC_ASSERT(avl_root, NULL);
 
 	return rc;
 
@@ -31,7 +31,7 @@ int bst_test_case1()
 /*
  * This test case tests insertion with 7 nodes in leftmost side.
  */
-int bst_test_case2()
+int avl_test_case2()
 {
 
 	int rc = EOK;
@@ -41,15 +41,15 @@ int bst_test_case2()
 	for (i = 10; i > 0; i--)
 	{
 
-		bst_insert(bst_root, &i, sizeof(int), bst_int_data_compare);
-		bst_check_sanity(bst_root);
+		avl_insert(avl_root, &i, sizeof(int), common_int_data_compare);
+		avl_check_sanity(avl_root);
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
-	bst_destroy_tree(bst_root);
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
+	avl_destroy_tree(avl_root);
+	avl_root = NULL;
+	CHECK_RC_ASSERT(avl_root, NULL);
 
 	return rc;
 
@@ -58,7 +58,7 @@ int bst_test_case2()
 /*
  * This function inserts random data inside BST.
  */
-int bst_test_case3()
+int avl_test_case3()
 {
 
 	int rc = EOK;
@@ -68,15 +68,15 @@ int bst_test_case3()
 	for (i = 0; i < 7; i++)
 	{
 
-		bst_insert(bst_root, &(data[i]), sizeof(int), bst_int_data_compare);
-		CHECK_RC_ASSERT((bst_root == NULL), 0);
+		avl_insert(avl_root, &(data[i]), sizeof(int), common_int_data_compare);
+		CHECK_RC_ASSERT((avl_root == NULL), 0);
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
-	bst_destroy_tree(bst_root);
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
+	avl_destroy_tree(avl_root);
+	avl_root = NULL;
+	CHECK_RC_ASSERT(avl_root, NULL);
 
 	return rc;
 
@@ -85,7 +85,7 @@ int bst_test_case3()
 /*
  * This test case tests deletion of leaf node.
  */
-int bst_test_case4()
+int avl_test_case4()
 {
 
 	int rc = EOK;
@@ -94,28 +94,29 @@ int bst_test_case4()
 	for (i = 0; i < 7; i++)
 	{
 
-		bst_insert(bst_root, &i, sizeof(int), bst_int_data_compare);
-		CHECK_RC_ASSERT((bst_root == NULL), 0);
+		avl_insert(avl_root, &i, sizeof(int), common_int_data_compare);
+		CHECK_RC_ASSERT((avl_root == NULL), 0);
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	for (i = 6; i >= 0; i--)
 	{
 
-		bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+		avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
-		bst_inorder_traversal(bst_root, bst_int_node_printer);
+		avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	}
 
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	avl_root = NULL;
+	CHECK_RC_ASSERT(avl_root, NULL);
 	return rc;
 
 }
 
+#ifdef DELETE_AVL
 /*
  * This test case tests deletion of leaf node.
  */
@@ -269,7 +270,9 @@ int bst_test_case8()
 
 }
 
-int avl_tree_tc_execute()
+#endif
+
+int avl_tc_execute()
 {
 
 	int rc = EOK;

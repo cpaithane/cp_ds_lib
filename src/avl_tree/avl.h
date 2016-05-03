@@ -3,61 +3,63 @@
 /*
  * Data structure for BST
  */
-typedef struct bst
+typedef struct avl
 {
 
 	unsigned int bst_height;
 	void *bst_data;
-	struct bst *bst_left;
-	struct bst *bst_right;
+	struct avl *bst_left;
+	struct avl *bst_right;
 
-}bst_st;
+}avl_st;
 
-#define BST_MIN_HEIGHT 1
+#define AVL_MIN_HEIGHT 1
 
 typedef int (*bst_data_compare_t)(const void *, const void *);
-typedef void (*bst_node_printer_t)(const bst_st *node);
+typedef void (*avl_node_printer_t)(const avl_st *node);
 
 /*
  * APIs to use bst
  */
-void bst_initialize_node(bst_st *node, void *data, size_t len);
-bst_st *bst_alloc_node(void *data, size_t len);
-void bst_dealloc_node(bst_st **nodep);
+void avl_initialize_node(avl_st *node, void *data, size_t len);
+avl_st *avl_alloc_node(void *data, size_t len);
+void avl_dealloc_node(avl_st **nodep);
 
-void bst_int_node_printer(const bst_st *node);
-int bst_int_data_compare(const void *data1, const void *data2);
-bst_st *bst_insert(bst_st *root, void *data, size_t len, bst_data_compare_t bst_data_compare);
+void avl_int_node_printer(const avl_st *node);
+avl_st *avl_insert(avl_st *root, void *data, size_t len, bst_data_compare_t bst_data_compare);
 
-void bst_inorder_traversal(bst_st *root, bst_node_printer_t bst_node_printer);
+void avl_inorder_traversal(avl_st *root, avl_node_printer_t avl_node_printer);
 
-int bst_traverse_bst(bst_st *root,
-                     bst_st **parent,
-                     bst_st **node,
+int avl_traverse_bst(avl_st *root,
+                     avl_st **parent,
+                     avl_st **node,
                      void *data,
                      bst_data_compare_t compare);
 
-bst_st *bst_delete_node_1(bst_st *root, bst_st *parent, bst_st *node_to_delete);
+avl_st *avl_delete_node_1(avl_st *root, avl_st *parent, avl_st *node_to_delete);
 
-bst_st *bst_delete_node_2(bst_st *root, bst_st *parent, bst_st *node_to_delete);
+avl_st *avl_delete_node_2(avl_st *root, avl_st *parent, avl_st *node_to_delete);
 
-bst_st *bst_delete_node_3(bst_st *root, bst_st *parent, bst_st *node_to_delete, size_t len);
+avl_st *avl_delete_node_3(avl_st *root,
+			  avl_st *parent,
+			  avl_st *node_to_delete,
+			  size_t len);
 
-bst_st *bst_delete_node(bst_st *root, 
+avl_st *avl_delete_node(avl_st *root, 
                         void *data, 
                         size_t len, 
                         bst_data_compare_t compare);
 
-void bst_destroy_tree(bst_st *root);
-bst_st* bst_left_rotate(bst_st *root);
-bst_st* bst_right_rotate(bst_st *root);
-unsigned int bst_get_node_height(bst_st *node);
-int bst_get_balance_factor(bst_st *node);
-void bst_update_node_height(bst_st *root);
-bst_st *bst_do_balance(bst_st *root, 
+void avl_destroy_tree(avl_st *root);
+avl_st* bst_left_rotate(avl_st *root);
+avl_st* bst_right_rotate(avl_st *root);
+unsigned int bst_get_node_height(avl_st *node);
+int bst_get_balance_factor(avl_st *node);
+void bst_update_node_height(avl_st *root);
+avl_st *bst_do_balance(avl_st *root, 
                        void *data, 
                        bst_data_compare_t compare);
-int bst_check_sanity(bst_st *root);
-bst_st *bst_handle_spl_left_rotate(bst_st *root);
-bst_st *bst_handle_spl_right_rotate(bst_st *root);
+int avl_check_sanity(avl_st *root);
+avl_st *bst_handle_spl_left_rotate(avl_st *root);
+avl_st *bst_handle_spl_right_rotate(avl_st *root);
 

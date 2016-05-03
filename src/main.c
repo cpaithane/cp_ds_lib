@@ -40,6 +40,10 @@ int cp_ds_lib_execute(char *str)
 	{
 		rc = scll_tc_execute();
 	}
+	else if (strcmp(str, "avl_tree") == 0)
+	{
+		rc = avl_tc_execute();
+	}
 	else
 	{
 		CHECK_RC_ASSERT(1, 0);

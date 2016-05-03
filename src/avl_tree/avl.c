@@ -3,12 +3,12 @@
 /*
  * This is root node of BST initialized to NULL.
  */
-bst_st *bst_root = NULL;
+avl_st *avl_root = NULL;
 
 /*
  * This function returns the height at which node is present.
  */
-unsigned int bst_get_node_height(bst_st *node)
+unsigned int bst_get_node_height(avl_st *node)
 {
 
 	unsigned int height = 0;
@@ -24,29 +24,29 @@ unsigned int bst_get_node_height(bst_st *node)
 /*
  * This function initializes node, pointers etc.
  */
-void bst_initialize_node(bst_st *node, void *data, size_t len)
+void avl_initialize_node(avl_st *node, void *data, size_t len)
 {
 
 	memcpy(node->bst_data, data, len);
 	node->bst_left = NULL;
 	node->bst_right = NULL;
-	node->bst_height = BST_MIN_HEIGHT;
+	node->bst_height = AVL_MIN_HEIGHT;
 
 }
 
 /*
  * This function allocates bst node.
  */
-bst_st *bst_alloc_node(void *data, size_t len)
+avl_st *avl_alloc_node(void *data, size_t len)
 {
 
-	bst_st *node = NULL;
-	node = (bst_st *)malloc(sizeof(bst_st));
-	memset(node, 0, sizeof(bst_st));
+	avl_st *node = NULL;
+	node = (avl_st *)malloc(sizeof(avl_st));
+	memset(node, 0, sizeof(avl_st));
 
 	node->bst_data = malloc(len);
 	memset(node->bst_data, 0, len);
-	bst_initialize_node(node, data, len);
+	avl_initialize_node(node, data, len);
 
 	return node;
 
@@ -55,10 +55,10 @@ bst_st *bst_alloc_node(void *data, size_t len)
 /*
  * This function deallocates node and data inside it.
  */
-void bst_dealloc_node(bst_st **nodep)
+void avl_dealloc_node(avl_st **nodep)
 {
 
-	bst_st *node = *nodep;
+	avl_st *node = *nodep;
 	free(node->bst_data);
 	free(node);
 	*nodep = NULL;
@@ -66,35 +66,9 @@ void bst_dealloc_node(bst_st **nodep)
 }
 
 /*
- * This function compares integer data and returns 
- * 0 if both are equal
- * 1 if data1 > data2
- * -1 if data1 < data2
- */
-int bst_int_data_compare(const void *data1, const void *data2)
-{
-
-	int ret_val = IDENTICAL;
-	int val1 = *((int *)data1);
-	int val2 = *((int *)data2);
-
-	if (val1 < val2)
-	{
-		ret_val = FIRST_LESS;
-	}
-	else if (val1 > val2)
-	{
-		ret_val = FIRST_GREATER;
-	}
-	
-	return ret_val;
-
-}
-
-/*
  * This function will update the node height after rebalancing.
  */
-void bst_update_node_height(bst_st *root)
+void bst_update_node_height(avl_st *root)
 {
 
 	unsigned int lheight = bst_get_node_height(root->bst_left);
@@ -113,12 +87,12 @@ void bst_update_node_height(bst_st *root)
  *     /
  *    T2
  */
-bst_st *bst_handle_spl_right_rotate(bst_st *root)
+avl_st *bst_handle_spl_right_rotate(avl_st *root)
 {
 
 	void *tmp = NULL;
-	bst_st *T1 = root->bst_left;
-	bst_st *T2 = T1->bst_left;
+	avl_st *T1 = root->bst_left;
+	avl_st *T2 = T1->bst_left;
 	CHECK_RC_ASSERT((T2 == NULL), 0);
 
 	/*
@@ -152,13 +126,13 @@ bst_st *bst_handle_spl_right_rotate(bst_st *root)
  *		    /   \	      /  \
  *		   T2   T3	      T1  T2
  */
-bst_st* bst_left_rotate(bst_st *root)
+avl_st* bst_left_rotate(avl_st *root)
 {
 
-	bst_st *T1 = root->bst_left;
-	bst_st *right = root->bst_right;
-	bst_st *T2 = NULL;
-	bst_st *T3 = NULL;
+	avl_st *T1 = root->bst_left;
+	avl_st *right = root->bst_right;
+	avl_st *T2 = NULL;
+	avl_st *T3 = NULL;
 
 	/*
 	 * Let's handle special case here.
@@ -188,9 +162,9 @@ bst_st* bst_left_rotate(bst_st *root)
 	 * changed to right pointer. Diagram proves that right will be a new bst_root 
 	 * in this case.
 	 */
-	if (root == bst_root)
+	if (root == avl_root)
 	{
-		bst_root = right;
+		avl_root = right;
 	}
 
 	return right;
@@ -206,12 +180,12 @@ bst_st* bst_left_rotate(bst_st *root)
  *          \
  *          T2
  */
-bst_st *bst_handle_spl_left_rotate(bst_st *root)
+avl_st *bst_handle_spl_left_rotate(avl_st *root)
 {
 
 	void *tmp = NULL;
-	bst_st *T1 = root->bst_right;
-	bst_st *T2 = T1->bst_right;
+	avl_st *T1 = root->bst_right;
+	avl_st *T2 = T1->bst_right;
 
 	CHECK_RC_ASSERT((T2 == NULL), 0);
 
@@ -246,10 +220,10 @@ bst_st *bst_handle_spl_left_rotate(bst_st *root)
  *	      /  \	    		    /  \
  *	      T1 T2			   T2  T3
  */
-bst_st* bst_right_rotate(bst_st *root)
+avl_st* bst_right_rotate(avl_st *root)
 {
 
-	bst_st *T3 = root->bst_right;
+	avl_st *T3 = root->bst_right;
 
 	/*
 	 * Let's handle a special case here.
@@ -259,9 +233,9 @@ bst_st* bst_right_rotate(bst_st *root)
 		return (bst_handle_spl_right_rotate(root));
 	}
 
-	bst_st *left = root->bst_left;
-	bst_st *T1 = left->bst_left;
-	bst_st *T2 = left->bst_right;
+	avl_st *left = root->bst_left;
+	avl_st *T1 = left->bst_left;
+	avl_st *T2 = left->bst_right;
 
 	/*
 	 * Perform rotation as shown in figure
@@ -280,9 +254,9 @@ bst_st* bst_right_rotate(bst_st *root)
 	 * changed to left pointer. Diagram proves that left will be a new bst_root 
 	 * in this case.
 	 */
-	if (root == bst_root)
+	if (root == avl_root)
 	{
-		bst_root = left;
+		avl_root = left;
 	}
 
 	return left;
@@ -292,7 +266,7 @@ bst_st* bst_right_rotate(bst_st *root)
 /*
  * This function returns balance factor of the node.
  */
-int bst_get_balance_factor(bst_st *node)
+int bst_get_balance_factor(avl_st *node)
 {
 
 	int balance_factor = 0;
@@ -313,7 +287,7 @@ int bst_get_balance_factor(bst_st *node)
  * This function does balancing of bst to convert it to AVL.
  * There are 4 cases in which balancing is done listed in the implementation.
  */
-bst_st *bst_do_balance(bst_st *root, 
+avl_st *bst_do_balance(avl_st *root, 
 		       void *data, 
 		       bst_data_compare_t compare)
 {
@@ -374,7 +348,7 @@ bst_st *bst_do_balance(bst_st *root,
 /*
  * This function inserts data into bst. compare function pointer can be overriden. 
  */
-bst_st *bst_insert(bst_st *root, void *data, size_t len, bst_data_compare_t compare)
+avl_st *avl_insert(avl_st *root, void *data, size_t len, bst_data_compare_t compare)
 {
 
 	int rc = EOK;
@@ -385,15 +359,15 @@ bst_st *bst_insert(bst_st *root, void *data, size_t len, bst_data_compare_t comp
 	if (root == NULL)
 	{
 
-		root = bst_alloc_node(data, len);
+		root = avl_alloc_node(data, len);
 
 		/*
 		 * If global root node of BST is NULL, then it is first node 
 		 * allocation.
 		 */
-		if (bst_root == NULL)
+		if (avl_root == NULL)
 		{
-			bst_root = root;
+			avl_root = root;
 		}
 
 		return root;
@@ -410,7 +384,7 @@ bst_st *bst_insert(bst_st *root, void *data, size_t len, bst_data_compare_t comp
 	if (rc == FIRST_GREATER)
 	{
 
-		root->bst_right = bst_insert(root->bst_right, 
+		root->bst_right = avl_insert(root->bst_right, 
 					     data, len, 
 					     compare);
 
@@ -418,7 +392,7 @@ bst_st *bst_insert(bst_st *root, void *data, size_t len, bst_data_compare_t comp
 	else if (rc == FIRST_LESS)
 	{
 
-		root->bst_left = bst_insert(root->bst_left, 
+		root->bst_left = avl_insert(root->bst_left, 
 					     data, len, 
 					     compare);
 
@@ -438,7 +412,7 @@ bst_st *bst_insert(bst_st *root, void *data, size_t len, bst_data_compare_t comp
 
 }
 
-void bst_inorder_traversal(bst_st *root, bst_node_printer_t bst_node_printer)
+void avl_inorder_traversal(avl_st *root, avl_node_printer_t avl_node_printer)
 {
 
 	/*
@@ -452,26 +426,26 @@ void bst_inorder_traversal(bst_st *root, bst_node_printer_t bst_node_printer)
 	/*
 	 * traverse to the left subtree
 	 */
-	bst_inorder_traversal(root->bst_left, bst_node_printer);
+	avl_inorder_traversal(root->bst_left, avl_node_printer);
 
 	/*
 	 * print the node.
 	 */
-	bst_node_printer(root);
+	avl_node_printer(root);
 
 	/*
 	 * traverse to the right subtree
 	 */
-	bst_inorder_traversal(root->bst_right, bst_node_printer);
+	avl_inorder_traversal(root->bst_right, avl_node_printer);
 
 }
 
 /*
  * This function traverses BST till it reaches data uses compare function.
  */
-int bst_traverse_bst(bst_st *root, 
-		     bst_st **parent, 
-		     bst_st **node, 
+int avl_traverse_bst(avl_st *root, 
+		     avl_st **parent, 
+		     avl_st **node, 
 		     void *data, 
 		     bst_data_compare_t compare)
 {
@@ -519,16 +493,16 @@ int bst_traverse_bst(bst_st *root,
 /*
  * This function deletes leaf nodes of BST
  */
-bst_st *bst_delete_node_1(bst_st *root, bst_st *parent, bst_st *node_to_delete)
+avl_st *avl_delete_node_1(avl_st *root, avl_st *parent, avl_st *node_to_delete)
 {
 
 	/*
 	 * If it is root node, return root as NULL.
 	 */
-	if (node_to_delete == bst_root)
+	if (node_to_delete == avl_root)
 	{
 
-		bst_root = NULL;
+		avl_root = NULL;
 		root = NULL;
 
 	}
@@ -543,7 +517,7 @@ bst_st *bst_delete_node_1(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 
 	}
 
-	bst_dealloc_node(&node_to_delete);
+	avl_dealloc_node(&node_to_delete);
 	return root;
 
 }
@@ -551,7 +525,7 @@ bst_st *bst_delete_node_1(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 /*
  * This function deletes a node which has either left child or right child.
  */
-bst_st *bst_delete_node_2(bst_st *root, bst_st *parent, bst_st *node_to_delete)
+avl_st *avl_delete_node_2(avl_st *root, avl_st *parent, avl_st *node_to_delete)
 {
 
 	int is_left = (node_to_delete->bst_left != NULL ? 1 : 0);
@@ -559,20 +533,20 @@ bst_st *bst_delete_node_2(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 	/*
 	 * If deletion is for root. That means, parent is NULL.
 	 */
-	if (node_to_delete == bst_root)
+	if (node_to_delete == avl_root)
 	{
 
 		if (is_left)
 		{
-			bst_root = node_to_delete->bst_left;
+			avl_root = node_to_delete->bst_left;
 		}
 		else
 		{
-			bst_root = node_to_delete->bst_right;
+			avl_root = node_to_delete->bst_right;
 		}
 
-		bst_dealloc_node(&node_to_delete);
-		return bst_root;
+		avl_dealloc_node(&node_to_delete);
+		return avl_root;
 
 	}
 
@@ -591,7 +565,7 @@ bst_st *bst_delete_node_2(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 		parent->bst_right = node_to_delete->bst_right;
 	}
 
-	bst_dealloc_node(&node_to_delete);
+	avl_dealloc_node(&node_to_delete);
 	return root;
 
 }
@@ -599,13 +573,16 @@ bst_st *bst_delete_node_2(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 /*
  * This function deletes a node which has both the children.
  */
-bst_st *bst_delete_node_3(bst_st *root, bst_st *parent, bst_st *node_to_delete, size_t len)
+avl_st *avl_delete_node_3(avl_st *root,
+			  avl_st *parent,
+			  avl_st *node_to_delete,
+			  size_t len)
 {
 
-	bst_st *in_suc = NULL;
-	bst_st *father_of_in_suc = NULL;
-	bst_st *father_of_right_subtree = node_to_delete;
-	bst_st *right_subtree = node_to_delete->bst_right;
+	avl_st *in_suc = NULL;
+	avl_st *father_of_in_suc = NULL;
+	avl_st *father_of_right_subtree = node_to_delete;
+	avl_st *right_subtree = node_to_delete->bst_right;
 
 	/*
 	 * Find out first inorder successor of the node to be deleted.
@@ -645,7 +622,7 @@ bst_st *bst_delete_node_3(bst_st *root, bst_st *parent, bst_st *node_to_delete, 
 	/*
 	 * Delete the node pointed by inorder predecessor.
 	 */
-	bst_dealloc_node(&in_suc);
+	avl_dealloc_node(&in_suc);
 
 	return root;
 
@@ -654,22 +631,22 @@ bst_st *bst_delete_node_3(bst_st *root, bst_st *parent, bst_st *node_to_delete, 
 /*
  * This function deletes the node which contains specified value
  */
-bst_st *bst_delete_node(bst_st *root, 
+avl_st *avl_delete_node(avl_st *root, 
 			void *data, 
 			size_t len, 
 			bst_data_compare_t compare)
 {
 
-	bst_st *node_to_delete = NULL;
-	bst_st *parent = NULL;
+	avl_st *node_to_delete = NULL;
+	avl_st *parent = NULL;
 
 	/*
 	 * First traverse to the node of deletion.
 	 */
-	bst_traverse_bst(root, &parent, &node_to_delete, data, compare);
+	avl_traverse_bst(root, &parent, &node_to_delete, data, compare);
 
 	CHECK_RC_ASSERT((node_to_delete == NULL), 0);
-	if (root != bst_root)
+	if (root != avl_root)
 	{
 		CHECK_RC_ASSERT((parent == NULL), 0);
 	}
@@ -688,7 +665,7 @@ bst_st *bst_delete_node(bst_st *root,
 	    (node_to_delete->bst_right == NULL))
 	{
 
-		root = bst_delete_node_1(root, parent, node_to_delete);
+		root = avl_delete_node_1(root, parent, node_to_delete);
 		return root;
 
 	}
@@ -700,7 +677,7 @@ bst_st *bst_delete_node(bst_st *root,
 	    (node_to_delete->bst_right == NULL))
 	{
 
-		root = bst_delete_node_2(root, parent, node_to_delete);
+		root = avl_delete_node_2(root, parent, node_to_delete);
 		return root;
 
 	}
@@ -712,7 +689,7 @@ bst_st *bst_delete_node(bst_st *root,
 	    (node_to_delete->bst_right))
 	{
 
-		root = bst_delete_node_3(root, parent, node_to_delete, len);
+		root = avl_delete_node_3(root, parent, node_to_delete, len);
 		return root;
 
 	}
@@ -727,7 +704,7 @@ bst_st *bst_delete_node(bst_st *root,
 /*
  * This function checks whether balance factor is from -1 to 1.
  */
-int bst_check_sanity(bst_st *root)
+int avl_check_sanity(avl_st *root)
 {
 
 	int balance_factor = 0;
@@ -743,8 +720,8 @@ int bst_check_sanity(bst_st *root)
 		CHECK_RC_ASSERT(balance_factor, 1);
 	}
 
-	bst_check_sanity(root->bst_left);
-	bst_check_sanity(root->bst_right);
+	avl_check_sanity(root->bst_left);
+	avl_check_sanity(root->bst_right);
 	return 1;
 
 }
@@ -752,7 +729,7 @@ int bst_check_sanity(bst_st *root)
 /*
  * This function prints integer data inside node
  */
-void bst_int_node_printer(const bst_st *node)
+void avl_int_node_printer(const avl_st *node)
 {
 
 	int *data;
@@ -771,7 +748,7 @@ void bst_int_node_printer(const bst_st *node)
 /*
  * This function destroys tree rooted at root
  */
-void bst_destroy_tree(bst_st *root)
+void avl_destroy_tree(avl_st *root)
 {
 
 	if (root == NULL)
@@ -779,9 +756,9 @@ void bst_destroy_tree(bst_st *root)
 		return;
 	}
 
-	bst_destroy_tree(root->bst_left);
-	bst_destroy_tree(root->bst_right);
-	bst_dealloc_node(&root);
+	avl_destroy_tree(root->bst_left);
+	avl_destroy_tree(root->bst_right);
+	avl_dealloc_node(&root);
 
 }
 
