@@ -104,8 +104,21 @@ avl_st *bst_handle_spl_right_rotate(avl_st *root)
 
 	root->bst_left = T2;
 	root->bst_right = T1;
-	T1->bst_left = NULL;
-	T1->bst_right = NULL;
+
+	/*
+	 * There could scenario that T1 could have right child/subtree.
+	 */
+	if (T1->bst_right)
+	{
+
+		T1->bst_left = T1->bst_right;
+		T1->bst_right = NULL;
+
+	}
+	else
+	{
+		T1->bst_left = NULL;		
+	}
 
 	/*
 	 * Now, update the heights
@@ -198,8 +211,19 @@ avl_st *bst_handle_spl_left_rotate(avl_st *root)
 
 	root->bst_right = T2;
 	root->bst_left = T1;
-	T1->bst_left = NULL;
-	T1->bst_right = NULL;
+
+	/*
+	 * Handle a scenario where left subtree is available for T1.
+	 */
+	if (T1->bst_left)
+	{
+		T1->bst_right = T1->bst_left;
+		T1->bst_left = NULL;
+	}
+	else
+	{
+		T1->bst_right = NULL;
+	}
 
 	/*
 	 * Update the heights
@@ -441,189 +465,86 @@ void avl_inorder_traversal(avl_st *root, avl_node_printer_t avl_node_printer)
 }
 
 /*
- * This function traverses BST till it reaches data uses compare function.
+ * This function finds a node which has minimum value in tree. 
  */
-int avl_traverse_bst(avl_st *root, 
-		     avl_st **parent, 
-		     avl_st **node, 
-		     void *data, 
-		     bst_data_compare_t compare)
-{
-
-	int rc = EOK;
-
-	CHECK_RC_ASSERT((data == NULL), 0);
-
-	if (root == NULL)
-	{
-		return ENOENT;
-	}
-
-	rc = compare(root->bst_data, data);
-	if (rc == FIRST_GREATER)
-	{
-
-		*parent = root;
-		return (bst_traverse_bst(root->bst_left,
-				 parent, 
-				 node, 
-				 data, compare));
-
-	}
-	else if (rc == FIRST_LESS)
-	{
-
-		*parent = root;
-		return (bst_traverse_bst(root->bst_right,
-				 parent, 
-				 node, 
-				 data, compare));
-
-	}
-	else
-	{
-
-		*node = root;
-		return EOK;
-
-	}
-
-}
-
-/*
- * This function deletes leaf nodes of BST
- */
-avl_st *avl_delete_node_1(avl_st *root, avl_st *parent, avl_st *node_to_delete)
-{
-
-	/*
-	 * If it is root node, return root as NULL.
-	 */
-	if (node_to_delete == avl_root)
-	{
-
-		avl_root = NULL;
-		root = NULL;
-
-	}
-	/*
-	 * Else, link from the parent needs to be broken.
-	 */
-	else
-	{
-
-		parent->bst_left = NULL;
-		parent->bst_right = NULL;
-
-	}
-
-	avl_dealloc_node(&node_to_delete);
-	return root;
-
-}
-
-/*
- * This function deletes a node which has either left child or right child.
- */
-avl_st *avl_delete_node_2(avl_st *root, avl_st *parent, avl_st *node_to_delete)
-{
-
-	int is_left = (node_to_delete->bst_left != NULL ? 1 : 0);
-
-	/*
-	 * If deletion is for root. That means, parent is NULL.
-	 */
-	if (node_to_delete == avl_root)
-	{
-
-		if (is_left)
-		{
-			avl_root = node_to_delete->bst_left;
-		}
-		else
-		{
-			avl_root = node_to_delete->bst_right;
-		}
-
-		avl_dealloc_node(&node_to_delete);
-		return avl_root;
-
-	}
-
-	/*
-	 * There are two subcases in this case : 
-	 * If left subtree present, assign this left subtree to the parent of the node 
-	 * to be deleted.
-	 */
-
-	if (is_left)
-	{
-		parent->bst_left = node_to_delete->bst_left;
-	}
-	else
-	{
-		parent->bst_right = node_to_delete->bst_right;
-	}
-
-	avl_dealloc_node(&node_to_delete);
-	return root;
-
-}
-
-/*
- * This function deletes a node which has both the children.
- */
-avl_st *avl_delete_node_3(avl_st *root,
-			  avl_st *parent,
-			  avl_st *node_to_delete,
-			  size_t len)
+avl_st *avl_get_min_value(avl_st *root)
 {
 
 	avl_st *in_suc = NULL;
-	avl_st *father_of_in_suc = NULL;
-	avl_st *father_of_right_subtree = node_to_delete;
-	avl_st *right_subtree = node_to_delete->bst_right;
+	avl_st *right_subtree = root;
 
 	/*
-	 * Find out first inorder successor of the node to be deleted.
+	 * Find out first inorder successor of the node.
 	 */
 	while (right_subtree->bst_left != NULL)
 	{
-
-		father_of_right_subtree = right_subtree;
 		right_subtree = right_subtree->bst_left;
-
 	}
 
 	in_suc = right_subtree;
-	father_of_in_suc = father_of_right_subtree;
 	CHECK_RC_ASSERT((in_suc == NULL), 0);
-	CHECK_RC_ASSERT((father_of_in_suc, NULL), 0);
+	return in_suc;
 
-	/*
-	 * Now, swap the contents of inorder successor and 
-	 * node to be deleted.
-	 */
-	memcpy(node_to_delete->bst_data, in_suc->bst_data, len);
+}
 
-	/*
-	 * Inorder successor can have right subtree.
-	 * We need adjust pointers of right subtree.
-	 */
-	if (father_of_in_suc != node_to_delete)
+/*
+ * This function does all balancing work post-delete in bottom-up fashion. 
+ */
+avl_st *avl_do_balance_after_delete_internal(avl_st *root)
+{
+
+	int balance_factor, lbalance_factor, rbalance_factor;
+
+	if (root == NULL)
 	{
-		node_to_delete->bst_left = in_suc->bst_right;
+		return root;
 	}
-	else
+	
+	balance_factor = bst_get_balance_factor(root);
+	lbalance_factor = bst_get_balance_factor(root->bst_left);
+	rbalance_factor = bst_get_balance_factor(root->bst_right);
+
+	/*
+	 * Left left case
+	 */
+	if ((balance_factor > 1) && (lbalance_factor >= 0))
 	{
-		node_to_delete->bst_right = in_suc->bst_right;
+		return (bst_right_rotate(root));
 	}
 
 	/*
-	 * Delete the node pointed by inorder predecessor.
+	 * Right right case
 	 */
-	avl_dealloc_node(&in_suc);
+	if ((balance_factor < -1) && (rbalance_factor <= 0))
+	{
+		return (bst_left_rotate(root));
+	}
 
+	/*
+	 * Left right case
+	 */
+	if ((balance_factor > 1) && (lbalance_factor < 0))
+	{
+
+		root->bst_left = bst_left_rotate(root->bst_left);
+		return (bst_right_rotate(root));
+
+	}
+
+	/*
+	 * Right left case
+	 */
+	if ((balance_factor < -1) && (rbalance_factor > 0)) 
+	{
+
+		root->bst_right = bst_left_rotate(root->bst_right);
+		return (bst_left_rotate(root));
+
+	}
+
+	/*
+	 * Else, pointer is unchanged. Return root.
+	 */
 	return root;
 
 }
@@ -637,67 +558,89 @@ avl_st *avl_delete_node(avl_st *root,
 			bst_data_compare_t compare)
 {
 
-	avl_st *node_to_delete = NULL;
-	avl_st *parent = NULL;
+	int rc = EOK;
+	avl_st *temp;
 
 	/*
 	 * First traverse to the node of deletion.
 	 */
-	avl_traverse_bst(root, &parent, &node_to_delete, data, compare);
+	
+	CHECK_RC_ASSERT((data == NULL), 0);
 
-	CHECK_RC_ASSERT((node_to_delete == NULL), 0);
-	if (root != avl_root)
+	if (root == NULL)
 	{
-		CHECK_RC_ASSERT((parent == NULL), 0);
-	}
-
-	/*
-	 * There are three cases of deletion
-	 * 1. Deletion of leaf node
-	 * 2. Deletion of node which has single child
-	 * 3. Deletion of node which has two children
-	 */
-
-	/*
-	 * Case 1 of deletion
-	 */
-	if ((node_to_delete->bst_left == NULL) && 
-	    (node_to_delete->bst_right == NULL))
-	{
-
-		root = avl_delete_node_1(root, parent, node_to_delete);
 		return root;
-
 	}
 
-	/*
-	 * Case 2 of deletion
-	 */
-	if ((node_to_delete->bst_left == NULL) || 
-	    (node_to_delete->bst_right == NULL))
+	rc = compare(root->bst_data, data);
+	if (rc == FIRST_GREATER)
 	{
 
-		root = avl_delete_node_2(root, parent, node_to_delete);
-		return root;
+		root->bst_left = avl_delete_node(root->bst_left,
+						 data, len, compare);
 
 	}
-
-	/*
-	 * Case 3 of deletion
-	 */
-	if ((node_to_delete->bst_left) && 
-	    (node_to_delete->bst_right))
+	else if (rc == FIRST_LESS)
 	{
 
-		root = avl_delete_node_3(root, parent, node_to_delete, len);
-		return root;
+		root->bst_right = avl_delete_node(root->bst_right,
+						 data, len, compare);
+
+	}
+	else
+	{
+
+		CHECK_RC_ASSERT((root == NULL), 0);
+
+		if ((root->bst_left == NULL) || 
+		    (root->bst_right == NULL))
+		{
+
+			temp = root->bst_left ? root->bst_left : root->bst_right;
+
+			/*
+			 * No child case.
+			 */
+			if (temp == NULL)
+			{
+
+				temp = root;
+				root = NULL;
+			}
+			else
+			{
+
+				memcpy(root->bst_data, temp->bst_data, len);
+				root->bst_left = NULL;
+				root->bst_right = NULL;
+
+			}
+
+			if (avl_root == temp)
+			{
+				avl_root = NULL;
+			}
+			avl_dealloc_node(&temp);
+		}
+		else
+		{
+
+			temp = avl_get_min_value(root->bst_right);
+			memcpy(root->bst_data, temp->bst_data, len);
+			root->bst_right = avl_delete_node(root->bst_right,
+					  root->bst_data, len, compare);
+
+		}
 
 	}
 
-	/*
-	 * Should not reach here by any means. Mess !
-	 */
-	CHECK_RC_ASSERT(1, 0);
+	if (root == NULL)
+	{
+		return root;
+	}
+
+	bst_update_node_height(root);
+	return (avl_do_balance_after_delete_internal(root));
 
 }
 

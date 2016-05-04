@@ -30,21 +30,6 @@ avl_st *avl_insert(avl_st *root, void *data, size_t len, bst_data_compare_t bst_
 
 void avl_inorder_traversal(avl_st *root, avl_node_printer_t avl_node_printer);
 
-int avl_traverse_bst(avl_st *root,
-                     avl_st **parent,
-                     avl_st **node,
-                     void *data,
-                     bst_data_compare_t compare);
-
-avl_st *avl_delete_node_1(avl_st *root, avl_st *parent, avl_st *node_to_delete);
-
-avl_st *avl_delete_node_2(avl_st *root, avl_st *parent, avl_st *node_to_delete);
-
-avl_st *avl_delete_node_3(avl_st *root,
-			  avl_st *parent,
-			  avl_st *node_to_delete,
-			  size_t len);
-
 avl_st *avl_delete_node(avl_st *root, 
                         void *data, 
                         size_t len, 
@@ -62,4 +47,5 @@ avl_st *bst_do_balance(avl_st *root,
 int avl_check_sanity(avl_st *root);
 avl_st *bst_handle_spl_left_rotate(avl_st *root);
 avl_st *bst_handle_spl_right_rotate(avl_st *root);
-
+avl_st *avl_get_min_value(avl_st *root);
+avl_st *avl_do_balance_after_delete_internal(avl_st *root);

@@ -70,6 +70,7 @@ int avl_test_case3()
 
 		avl_insert(avl_root, &(data[i]), sizeof(int), common_int_data_compare);
 		CHECK_RC_ASSERT((avl_root == NULL), 0);
+		avl_check_sanity(avl_root);
 
 	}
 
@@ -96,6 +97,7 @@ int avl_test_case4()
 
 		avl_insert(avl_root, &i, sizeof(int), common_int_data_compare);
 		CHECK_RC_ASSERT((avl_root == NULL), 0);
+		avl_check_sanity(avl_root);
 
 	}
 
@@ -107,6 +109,7 @@ int avl_test_case4()
 		avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
 		avl_inorder_traversal(avl_root, avl_int_node_printer);
+		avl_check_sanity(avl_root);
 
 	}
 
@@ -116,11 +119,10 @@ int avl_test_case4()
 
 }
 
-#ifdef DELETE_AVL
 /*
  * This test case tests deletion of leaf node.
  */
-int bst_test_case5()
+int avl_test_case5()
 {
 
 	int i;
@@ -128,24 +130,26 @@ int bst_test_case5()
 	for (i = 7; i > 0; i--)
 	{
 
-		bst_insert(bst_root, &i, sizeof(int), bst_int_data_compare);
-		CHECK_RC_ASSERT((bst_root == NULL), 0);
+		avl_insert(avl_root, &i, sizeof(int), common_int_data_compare);
+		CHECK_RC_ASSERT((avl_root == NULL), 0);
+		avl_check_sanity(avl_root);
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	for (i = 1; i < 8; i++)
 	{
 
-		bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+		avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
-		bst_inorder_traversal(bst_root, bst_int_node_printer);
+		avl_inorder_traversal(avl_root, avl_int_node_printer);
+		avl_check_sanity(avl_root);
 
 	}
 
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	avl_root = NULL;
+	CHECK_RC_ASSERT(avl_root, NULL);
 
 	return EOK;
 
@@ -154,7 +158,7 @@ int bst_test_case5()
 /*
  * This test case tests deletion of nodes with single left children
  */
-int bst_test_case6()
+int avl_test_case6()
 {
 
 	int rc = EOK;
@@ -163,33 +167,33 @@ int bst_test_case6()
 	for (i = 0; i < 7; i++)
 	{
 
-		bst_insert(bst_root, &i, sizeof(int), bst_int_data_compare);
-		CHECK_RC_ASSERT((bst_root == NULL), 0);
+		avl_insert(avl_root, &i, sizeof(int), common_int_data_compare);
+		CHECK_RC_ASSERT((avl_root == NULL), 0);
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	for (i = 1; i < 6; i++)
 	{
 
-		bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+		avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
-		bst_inorder_traversal(bst_root, bst_int_node_printer);
+		avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	}
 
 	i = 0;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	i = 6;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
-	bst_root = NULL;
+	avl_root = NULL;
 	return EOK;
 
 }
@@ -197,43 +201,43 @@ int bst_test_case6()
 /*
  * This test case tests deletion of nodes with single right children
  */
-int bst_test_case7()
+int avl_test_case7()
 {
 
 	int rc = EOK;
 	int i;
 
-	bst_root = NULL;
+	avl_root = NULL;
 	for (i = 7; i > 0; i--)
 	{
 
-		bst_insert(bst_root, &i, sizeof(int), bst_int_data_compare);
-		CHECK_RC_ASSERT((bst_root == NULL), 0);
+		avl_insert(avl_root, &i, sizeof(int), common_int_data_compare);
+		CHECK_RC_ASSERT((avl_root == NULL), 0);
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	for (i = 6; i > 1; i--)
 	{
 
-		bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+		avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
-		bst_inorder_traversal(bst_root, bst_int_node_printer);
+		avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	}
 
 	i = 7;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	i = 1;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
-	bst_root = NULL;
+	avl_root = NULL;
 	return EOK;
 
 }
@@ -241,7 +245,7 @@ int bst_test_case7()
 /*
  * This test case tests deletion of node having both the children
  */
-int bst_test_case8()
+int avl_test_case8()
 {
 
 	int rc = EOK;
@@ -251,40 +255,38 @@ int bst_test_case8()
 	for (i = 0; i < 7; i++)
 	{
 
-		bst_insert(bst_root, &(data[i]), sizeof(int), bst_int_data_compare);
-		CHECK_RC_ASSERT((bst_root == NULL), 0);
+		avl_insert(avl_root, &(data[i]), sizeof(int), common_int_data_compare);
+		CHECK_RC_ASSERT((avl_root == NULL), 0);
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
 	i = 5;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	avl_delete_node(avl_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	avl_inorder_traversal(avl_root, avl_int_node_printer);
 
-	bst_destroy_tree(bst_root);
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	avl_destroy_tree(avl_root);
+	avl_root = NULL;
+	CHECK_RC_ASSERT(avl_root, NULL);
 	return EOK;
 
 }
-
-#endif
 
 int avl_tc_execute()
 {
 
 	int rc = EOK;
 
-	rc = bst_test_case1();
-	rc = bst_test_case2();
-	rc = bst_test_case3();
-	rc = bst_test_case4();
-	/*rc = bst_test_case5();
-	rc = bst_test_case6();
-	rc = bst_test_case7();
-	rc = bst_test_case8();*/
+	rc = avl_test_case1();
+	rc = avl_test_case2();
+	rc = avl_test_case3();
+	rc = avl_test_case4();
+	rc = avl_test_case5();
+	rc = avl_test_case6();
+	rc = avl_test_case7();
+	rc = avl_test_case8();
 
 	return rc;
 
