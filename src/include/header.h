@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #define EOK 0
 #define MAX_INT ((unsigned int)(-1))
@@ -52,4 +53,4 @@ int bst_tc_execute();
 int sll_tc_execute();
 int dll_tc_execute();
 int scll_tc_execute();
-
+int heap_tc_execute();

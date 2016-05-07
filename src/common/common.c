@@ -26,3 +26,15 @@ int common_int_data_compare(const void *data1, const void *data2)
 
 }
 
+/*
+ * This function swaps data pointers.
+ */
+void swap(void *data1, void *data2)
+{
+
+	void *tmp = data1;
+	data1 = data2;
+	data2 = tmp;
+
+}
+
