@@ -251,7 +251,8 @@ int graph_do_bfs(graph_st *graph, int start_vertex)
 }
 
 /*
- * This function uses stack to go deep down in the graph. Algorithm is as follow:
+ * This function uses stack to go deep down in the graph. Algorithm is similar to BFS
+ * but, stack is used.
  *
  */
 int graph_do_dfs(graph_st *graph, int start_vertex)
