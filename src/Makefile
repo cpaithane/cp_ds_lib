@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-SUBDIRS := common bst dll queue scll sll stack avl_tree heap
+SUBDIRS := common bst dll queue scll sll stack avl_tree heap graph
 
 .PHONY : all $(SUBDIRS)
 

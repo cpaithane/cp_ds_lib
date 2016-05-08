@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define EOK 0
 #define MAX_INT ((unsigned int)(-1))

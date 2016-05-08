@@ -48,6 +48,10 @@ int cp_ds_lib_execute(char *str)
 	{
 		rc = heap_tc_execute();
 	}
+	else if (strcmp(str, "graph") == 0)
+	{
+		rc = graph_tc_execute();
+	}
 	else
 	{
 		CHECK_RC_ASSERT(1, 0);
