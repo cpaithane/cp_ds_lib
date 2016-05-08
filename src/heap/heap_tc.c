@@ -9,6 +9,8 @@ int heap_test_case1()
 	bool min_heap_type = HEAP_TYPE_MIN;
 	bool max_heap_type = HEAP_TYPE_MAX;
 	int rc = EOK;
+	int min;
+	int max;
 	heap_st *min_heap = NULL;
 	heap_st *max_heap = NULL;
 	int data[9] = {50, 100, 200, 10, 20, 30, 70, 90, 110};
@@ -54,6 +56,38 @@ int heap_test_case1()
 	rc = heap_print_heap(max_heap, heap_print_int_node);
 	CHECK_RC_ASSERT(rc, EOK);
 	printf("\n");
+
+	/*
+	 * Print 9 minimum elements from heap.
+	 */
+	printf("9 minimum elements = \n");
+	for (i = 0; i < 9; i++)
+	{
+
+		heap_remove(min_heap,
+			    &min,
+			    sizeof(int),
+			    HEAP_TYPE_MIN,
+			    common_int_data_compare);
+		heap_print_int_node(&min);
+
+	}
+
+	/*
+	 * Print 9 maximum elements from heap.
+	 */
+	printf("\n9 maximum elements = \n");
+	for (i = 0; i < 9; i++)
+	{
+
+		heap_remove(max_heap,
+			    &max,
+			    sizeof(int),
+			    HEAP_TYPE_MAX,
+			    common_int_data_compare);
+		heap_print_int_node(&max);
+
+	}
 
 	rc = heap_deallocate_heap(min_heap);
 	CHECK_RC_ASSERT(rc, EOK);

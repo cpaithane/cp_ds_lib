@@ -43,6 +43,18 @@ do {\
  */
 typedef int (*common_data_compare_t)(const void *, const void *);
 int common_int_data_compare(const void *data1, const void *data2);
+void swap(void *data1, void *data2);
+void *find_greatest_from_three(
+			    void *root,
+			    void * left_child,
+			    void *right_child,
+			    common_data_compare_t compare);
+
+void *find_smallest_from_three(
+			    void *root,
+			    void * left_child,
+			    void *right_child,
+			    common_data_compare_t compare);
 
 /*
  * Following functions are entry points for test cases.

@@ -38,3 +38,61 @@ void swap(void *data1, void *data2)
 
 }
 
+/*
+ * This function finds out greatest from three elements.
+ */
+void *find_greatest_from_three(
+			    void *root,
+			    void * left_child,
+			    void *right_child,
+			    common_data_compare_t compare)
+{
+
+	int rc;
+	void *greatest = left_child;
+
+	rc = compare(root, left_child);
+	if (rc == FIRST_GREATER)
+	{
+		greatest = root;
+	}
+
+	rc = compare(greatest, right_child);
+	if (rc == FIRST_LESS)
+	{
+		greatest = right_child;
+	}
+
+	return greatest;
+
+}
+
+/*
+ * This function finds out smallest from three elements.
+ */
+void *find_smallest_from_three(
+			    void *root,
+			    void * left_child,
+			    void *right_child,
+			    common_data_compare_t compare)
+{
+
+	int rc;
+	void *smallest = left_child;
+
+	rc = compare(root, left_child);
+	if (rc == FIRST_LESS)
+	{
+		smallest = root;
+	}
+
+	rc = compare(smallest, right_child);
+	if (rc == FIRST_GREATER)
+	{
+		smallest = right_child;
+	}
+
+	return smallest;
+
+}
+

@@ -62,6 +62,7 @@ int heap_deallocate_heap(heap_st *heap)
 
 	/*
 	 * Heap has some elements. So, return ENOTEMPTY from here.
+	 */
 	if (heap->heap_size != HEAP_MIN_SIZE)
 	{
 
@@ -70,7 +71,6 @@ int heap_deallocate_heap(heap_st *heap)
 
 	}
 
-	 */
 	for (i = 0; i < HEAP_MAX_SIZE; i++)
 	{
 		free(heap->heap_data[i]);
@@ -94,7 +94,7 @@ int heap_get_parent(int i)
  */
 int heap_get_left_child(int i)
 {
-	return ((i < 1));
+	return ((i * 2) + 1);
 }
 
 /*
@@ -102,7 +102,7 @@ int heap_get_left_child(int i)
  */
 int heap_get_right_child(int i)
 {
-	return ((i < 1) + 1);
+	return ((i * 2) + 2);
 }
 
 /*
@@ -238,6 +238,249 @@ int heap_insert(heap_st *heap,
 	else
 	{
 		rc = heap_insert_max(heap, data, len, compare);
+	}
+
+	return rc;
+
+}
+
+/*
+ * This function checks left and right children's values with values stored at index.
+ * If max-heap property is not satisfied, then swap the root and maximum of children.
+ * Recurse this process.
+ */
+int heap_max_heapify(heap_st *heap, int index, common_data_compare_t compare)
+{
+
+	int rc = EOK;
+	int left_idx, right_idx, greatest_idx;
+	void *root, *left_child, *right_child, *greatest, *tmp;
+	int right_invalid = 0;
+
+	left_idx = heap_get_left_child(index);
+	right_idx = heap_get_right_child(index);
+
+	if ((left_idx >= heap->heap_size) && (right_idx >= heap->heap_size))
+	{
+		return rc;
+	}
+
+	root = heap->heap_data[index];
+	left_child = heap->heap_data[left_idx];
+
+	greatest = left_child;
+	greatest_idx = left_idx;
+
+	/*
+	 * If right children is invalid, then check whether root and left are in min
+	 * heap order. If they are, return from here.
+	 */
+	if (right_idx >= heap->heap_size)
+	{
+
+		right_invalid = 1;
+		if (compare(root, greatest) == FIRST_GREATER)
+		{
+			return rc;
+		}
+
+	}
+
+	if (right_invalid == 0)
+	{
+
+		right_child = heap->heap_data[right_idx];
+	
+		greatest = find_greatest_from_three(root,
+						    left_child,
+						    right_child,
+						    compare);
+		if (compare(greatest, root) == IDENTICAL)
+		{
+			greatest_idx = index;
+		}
+		else if (compare(greatest, left_child) == IDENTICAL)
+		{
+			greatest_idx = left_idx;
+		}
+		else if (compare(greatest, right_child) == IDENTICAL)
+		{
+			greatest_idx = right_idx;
+		}
+
+	}
+
+	if (greatest_idx != index)
+	{
+
+		tmp = heap->heap_data[index];
+		heap->heap_data[index] = heap->heap_data[greatest_idx];
+		heap->heap_data[greatest_idx] = tmp;
+
+		rc = heap_max_heapify(heap, greatest_idx, compare);
+
+	}
+
+	return rc;
+
+}
+
+/*
+ * This function takes out an element from root of the heap.
+ */
+int heap_remove_max(heap_st *heap,
+		    void *data,
+		    size_t len,
+		    common_data_compare_t compare)
+{
+
+	int rc = EOK;
+
+	memcpy(data, heap->heap_data[HEAP_ROOT_LOC], len);
+	memcpy(heap->heap_data[HEAP_ROOT_LOC],
+		heap->heap_data[heap->heap_size - 1],
+		len);
+	(heap->heap_size)--;
+
+	rc = heap_max_heapify(heap, 0, compare);
+	return rc;
+
+}
+
+/*
+ * This function checks left and right children's values with values stored at index.
+ * If min-heap property is not satisfied, then swap the root and minimum of children.
+ * Recurse this process.
+ */
+int heap_min_heapify(heap_st *heap, int index, common_data_compare_t compare)
+{
+
+	int rc = EOK;
+	int left_idx, right_idx, smallest_idx;
+	void *root, *left_child, *right_child, *smallest, *tmp;
+	int right_invalid = 0;
+
+	left_idx = heap_get_left_child(index);
+	right_idx = heap_get_right_child(index);
+
+	/*
+	 * If both the indices are invalid, then heapify has reached end of the
+	 * subtree.
+	 */
+	if ((left_idx >= heap->heap_size) && (right_idx >= heap->heap_size))
+	{
+		return rc;
+	}
+
+	root = heap->heap_data[index];
+	left_child = heap->heap_data[left_idx];
+	smallest = left_child;
+	smallest_idx = left_idx;
+
+	/*
+	 * If right children is invalid, then check whether root and left are in min
+	 * heap order. If they are, return from here.
+	 */
+	if (right_idx >= heap->heap_size)
+	{
+
+		right_invalid = 1;
+		if (compare(root, smallest) == FIRST_LESS)
+		{
+			return rc;
+		}
+
+	}
+
+	if (right_invalid == 0)
+	{
+
+		right_child = heap->heap_data[right_idx];
+	
+		smallest = find_smallest_from_three(root,
+						    left_child,
+						    right_child,
+						    compare);
+		if (compare(smallest, root) == IDENTICAL)
+		{
+			smallest_idx = index;
+		}
+		else if (compare(smallest, left_child) == IDENTICAL)
+		{
+			smallest_idx = left_idx;
+		}
+		else if (compare(smallest, right_child) == IDENTICAL)
+		{
+			smallest_idx = right_idx;
+		}
+
+	}
+
+	if (smallest_idx != index)
+	{
+
+		tmp = heap->heap_data[index];
+		heap->heap_data[index] = heap->heap_data[smallest_idx];
+		heap->heap_data[smallest_idx] = tmp;
+
+		rc = heap_min_heapify(heap, smallest_idx, compare);
+
+	}
+
+	return rc;
+
+}
+
+/*
+ * This function takes out an element from root of the heap.
+ */
+int heap_remove_min(heap_st *heap,
+		    void *data,
+		    size_t len,
+		    common_data_compare_t compare)
+{
+
+	int rc = EOK;
+
+	memcpy(data, heap->heap_data[HEAP_ROOT_LOC], len);
+	memcpy(heap->heap_data[HEAP_ROOT_LOC],
+		heap->heap_data[heap->heap_size - 1],
+		len);
+	(heap->heap_size)--;
+
+	rc = heap_min_heapify(heap, 0, compare);
+
+	return rc;
+
+}
+
+/*
+ * This function takes out an element from heap. Generally, heap removal is done
+ * from the root of the heap.
+ */
+int heap_remove(heap_st *heap,
+                void *data,
+		size_t len,
+                bool heap_type,
+                common_data_compare_t compare)
+{
+
+	int rc = EOK;
+
+	rc = heap_validate_input(heap, heap_type);
+	if (rc != EOK)
+	{
+		return rc;
+	}
+	CHECK_RC_ASSERT((data == NULL), 0);
+	
+	if (heap_type == HEAP_TYPE_MIN)
+	{
+		rc = heap_remove_min(heap, data, len, compare);
+	}
+	else
+	{
+		rc = heap_remove_max(heap, data, len, compare);
 	}
 
 	return rc;
