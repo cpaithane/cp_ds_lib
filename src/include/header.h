@@ -67,3 +67,6 @@ int sll_tc_execute();
 int dll_tc_execute();
 int scll_tc_execute();
 int heap_tc_execute();
+int graph_tc_execute();
+int trie_tc_execute();
+

@@ -4,7 +4,7 @@ import os
 import shutil
 
 SUBDIRS = ["common", "avl_tree", "bst", "dll", "queue", "scll", "sll", "stack",
-	   "heap", "graph"]
+	   "heap", "graph", "trie"]
 
 if os.path.exists("bin"):
 	shutil.rmtree("bin")

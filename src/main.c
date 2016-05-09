@@ -52,6 +52,10 @@ int cp_ds_lib_execute(char *str)
 	{
 		rc = graph_tc_execute();
 	}
+	else if (strcmp(str, "trie") == 0)
+	{
+		rc = trie_tc_execute();
+	}
 	else
 	{
 		CHECK_RC_ASSERT(1, 0);
