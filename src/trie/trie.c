@@ -160,3 +160,22 @@ int trie_search(trie_st *trie, char *key, int *num_comp)
 
 }
 
+/*
+ * Following function deletes a branch pointed by key.
+ */
+int trie_delete(trie_node_st *node, char *key, int level, int len)
+{
+
+	int rc = EOK;
+	int start_idx = key[level] - 'a';
+
+	if (len != level)
+	{
+		trie_delete(node->trie_node_pointers[start_idx], key, level + 1, len);
+	}
+
+	free(node->trie_node_pointers[start_idx]);
+	return rc;
+
+}
+

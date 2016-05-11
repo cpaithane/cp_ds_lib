@@ -34,4 +34,5 @@ trie_node_st *trie_allocate_node(char ch);
 int trie_deallocate_node(trie_node_st *node);
 int trie_insert(trie_st *trie, char *key);
 int trie_search(trie_st *trie, char *key, int *num_comp);
+int trie_delete(trie_node_st *trie, char *key, int level, int len);
 

@@ -11,6 +11,7 @@ int trie_test_case1()
 	int i, num_comp;
 	trie_st *trie = NULL;
 	char keys[][7] = {"the", "any", "there", "answer", "by", "bye", "the"};
+	char keys_undup[][7] = {"there", "answer", "bye"};
 
 	trie = trie_initialize();
 	CHECK_RC_ASSERT((trie == NULL), 0);
@@ -36,6 +37,15 @@ int trie_test_case1()
 	rc = trie_search(trie, "chetan", &num_comp);
 	CHECK_RC_ASSERT(rc, ENOENT);
 	rc = EOK;
+
+	for (i = 0; i < 3; i++)
+	{
+
+		rc = trie_delete(trie->root, keys_undup[i], 0, strlen(keys_undup[i]));
+		CHECK_RC_ASSERT(rc, EOK);
+
+	}
+
 	return rc;
 
 }
