@@ -6,6 +6,13 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#define TRUE 1
+#define FALSE 0
 
 #define EOK 0
 #define MAX_INT ((unsigned int)(-1))
@@ -69,4 +76,5 @@ int scll_tc_execute();
 int heap_tc_execute();
 int graph_tc_execute();
 int trie_tc_execute();
+int bplus_tc_execute();
 
