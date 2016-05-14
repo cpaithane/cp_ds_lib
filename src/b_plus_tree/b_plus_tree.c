@@ -148,8 +148,76 @@ int bplus_tree_format_node(char *path)
 }
 
 /*
+ * This function does following :
+ * 1. Calculate key based on path.
+ * 2. Search the key in the b+ tree rooted at root_path.
+ * 3. If key found in the b+ tree, delete the key.
+ */
+int bplus_tree_delete(char *root_path, char *path)
+{
+
+	int rc = EOK;
+	b_plus_tree_key_t *key = NULL;
+	bplus_tree_traverse_path_st *traverse_path = NULL;
+	item_st *item = NULL;
+
+	CHECK_RC_ASSERT((root_path == NULL), 0);
+	CHECK_RC_ASSERT((path == NULL), 0);
+
+	key = (b_plus_tree_key_t*)malloc(KEY_SIZE);
+	CHECK_RC_ASSERT((key == NULL), 0);
+
+	rc = bplus_form_key(path, key);
+	if (rc != EOK)
+	{
+
+		free(key);
+		return rc;
+	}
+
+	traverse_path = (bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
+	CHECK_RC_ASSERT((traverse_path == NULL), 0);
+	memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
+
+	rc = bplus_tree_search_key(root_path, key, traverse_path);
+	if (rc == ENOENT)
+	{
+
+		free(key);
+		bplus_tree_free_traverse_path(traverse_path);
+		return rc;
+
+	}
+
+	rc = bplus_tree_delete_item(traverse_path);
+	if (rc != EOK)
+	{
+
+		free(key);
+		bplus_tree_free_traverse_path(traverse_path);
+		return rc;
+
+	}
+
+	rc = bplus_tree_flush_traverse_path(traverse_path);
+	if (rc != EOK)
+	{
+
+		free(key);
+		bplus_tree_free_traverse_path(traverse_path);
+		return rc;
+
+	}
+
+	free(key);
+	bplus_tree_free_traverse_path(traverse_path);
+	return rc;
+
+}
+
+/*
  * This function does following : 
- * 1. Calculate a hash and unique key based on the path.
+ * 1. Calculate unique key based on the path.
  * 2. Search the key into b+ tree rooted at root_path.
  * 3. Insert the key and inode no. of the object pointed by path in b+ tree.
  */
@@ -421,6 +489,45 @@ int bin_search(
 		*position = start;
 	}
 
+	return rc;
+
+}
+
+/*
+ * This function deletes an item located at pe_position in leaf node and re-balances
+ * b+ tree.
+ */
+int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
+{
+
+	int rc = EOK;
+	void *leaf_node = NULL;
+	int i, position = 0;
+	block_head_st *block_head = NULL;
+	item_st *tmp_item1 = NULL;
+
+	leaf_node = bplus_tree_get_leaf_path(traverse_path);
+	CHECK_RC_ASSERT((leaf_node == NULL), 0);
+
+	block_head = bplus_tree_get_block_head(leaf_node);
+	CHECK_RC_ASSERT((block_head == NULL), 0);
+
+	position = bplus_tree_get_pos_path(traverse_path, BTREE_LEAF_LEVEL);
+
+	i = bplus_tree_shift_left(leaf_node, position, block_head->nr_items);
+
+	/*
+	 * Mark last item as 0. i.e. free.
+	 */
+	tmp_item1 = bplus_tree_get_item(leaf_node, i);
+	memset(tmp_item1, 0, ITEM_SIZE);
+
+	/*
+	 * Adjust counters.
+	 */
+	block_head->nr_items -= 1;
+	block_head->free_space += ITEM_SIZE;
+	
 	return rc;
 
 }

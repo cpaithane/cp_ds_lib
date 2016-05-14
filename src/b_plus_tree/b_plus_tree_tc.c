@@ -29,6 +29,7 @@ int bplus_test_case1()
 	b_plus_tree_key_t *key = NULL;
 	void *leaf_node;
 	item_st *item;
+	block_head_st *block_head = NULL;
 
 	rc = bplus_tree_init(META_DIR, ROOT, TRUE);
 	CHECK_RC_ASSERT(rc, EOK);
@@ -100,6 +101,48 @@ int bplus_test_case1()
 		    (uint32_t)item->i_ino);
 
 	}
+
+	/*
+	 * Delete the inode no. of file into b+ tree.
+	 * Then, lookup inside b+ tree for the key just deleted.
+	 */
+	for (i = 0; i < MAX_ITEMS; i++)
+	{
+
+		get_file_name(file_name, i);
+		rc = bplus_tree_delete(ROOT, file_name);
+		CHECK_RC_ASSERT(rc, EOK);
+
+		rc = bplus_form_key(file_name, key);
+		CHECK_RC_ASSERT(rc, EOK);
+
+		rc = bplus_tree_search_key(ROOT, key, traverse_path);
+		CHECK_RC_ASSERT(rc, ENOENT);
+
+		printf("Deleted filename = %s, key = %u\n",
+		    file_name,
+		    (uint32_t)key->i_ino);
+		
+	}
+
+	/*
+	 * Lets get the b+ tree leaf block and compare it's contents with 0.
+	 */
+	rc = bplus_tree_search_key(ROOT, key, traverse_path);
+	CHECK_RC_ASSERT(rc, ENOENT);
+
+	for (i = 0; i < MAX_ITEMS; i++)
+	{
+
+		leaf_node = bplus_tree_get_leaf_path(traverse_path);
+		item = bplus_tree_get_item(leaf_node, i);
+		CHECK_RC_ASSERT(item->i_ino, 0);
+
+	}
+
+	block_head = bplus_tree_get_block_head(leaf_node);
+	CHECK_RC_ASSERT(block_head->nr_items, 0);
+	CHECK_RC_ASSERT(block_head->free_space, (NODE_SIZE - BLOCK_HEAD_SIZE));
 
 	rc = bplus_tree_deinit(META_DIR);
 	CHECK_RC_ASSERT(rc, EOK);

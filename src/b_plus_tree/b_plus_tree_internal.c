@@ -190,6 +190,29 @@ int bplus_tree_free_traverse_path(bplus_tree_traverse_path_st *traverse_path)
 }
 
 /*
+ * This function left shifts one item from leaf node. Returns the slot where to 
+ * insert/delete new item
+ */
+int bplus_tree_shift_left(void *leaf_node, int position, uint16_t nr_items)
+{
+
+	int i;
+	item_st *tmp_item1, *tmp_item2;
+
+	for (i = position; i < (nr_items - 1); i++)
+	{
+
+		tmp_item1 = bplus_tree_get_item(leaf_node, i);
+		tmp_item2 = bplus_tree_get_item(leaf_node, i + 1);
+		memcpy(tmp_item1, tmp_item2, ITEM_SIZE);
+
+	}
+
+	return i;
+
+}
+
+/*
  * This function right shifts one item from leaf node. Returns the slot where to 
  * insert new item
  */
