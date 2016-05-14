@@ -96,3 +96,162 @@ void *find_smallest_from_three(
 
 }
 
+/*
+ * This function does a stat for path. If stat returns ENOENT, then path is absent. 
+ */
+int is_path_present(char *path, ino_t *i_ino)
+{
+
+	int rc = EOK;
+	struct stat *stat_buf;
+
+	CHECK_RC_ASSERT((path == NULL), 0);
+	CHECK_RC_ASSERT((i_ino == NULL), 0);
+
+	stat_buf = (struct stat*)malloc(sizeof(struct stat));
+	CHECK_RC_ASSERT((stat_buf == NULL), 0);
+
+	if (stat(path, stat_buf) == -1)
+	{
+
+		rc = errno;
+		*i_ino = 0;
+
+	}
+	else
+	{
+		*i_ino = stat_buf->st_ino;
+	}
+
+	free(stat_buf);
+	return rc;
+
+}
+
+/*
+ * This function does following things : 
+ * 1. Checks whether the path is present.
+ * 2. Reads entire contents of file and returns buf to caller.
+ */
+int read_file_contents(
+		char *path,
+		void *buf,
+		int read_flags,
+		mode_t mode,
+		size_t len)
+{
+
+	int rc = EOK;
+	ino_t i_ino;
+	int fd = -1;
+	int bytes_read;
+
+	CHECK_RC_ASSERT((path == NULL), 0);
+	CHECK_RC_ASSERT((buf == NULL), 0);
+
+	rc = is_path_present(path, &i_ino);
+	if (rc != EOK)
+	{
+		return rc;
+	}
+
+	fd = open(path, read_flags, mode);
+	if (fd == -1)
+	{
+
+		rc = errno;
+		return rc;
+
+	}
+
+	memset(buf, 0, len);
+	bytes_read = read(fd, buf, len);
+	if (bytes_read != len)
+	{
+		rc = errno;
+	}
+
+	close(fd);
+	return rc;
+
+}
+
+/*
+ * This function issues readdir on parent_dir and finds out matching inode no.
+ * It returns d_name of matching directory entry.
+ */
+int get_path(char *parent_dir, ino_t i_ino, char *path)
+{
+
+	int rc = EOK;
+	struct dirent *dirent = NULL;
+	DIR *dirp = NULL;
+
+	CHECK_RC_ASSERT((path == NULL), 0);
+	CHECK_RC_ASSERT((parent_dir == NULL), 0);
+
+	dirp = opendir(parent_dir);
+	CHECK_RC_ASSERT((dirp == NULL), 0);
+
+	while (1)
+	{
+
+		dirent = readdir(dirp);
+		if ((dirent == NULL) && (errno != EOK))
+		{
+
+			rc = errno;
+			break;
+
+		}
+
+		if (dirent->d_ino == i_ino)
+		{
+
+			memcpy(path, dirent->d_name, MAX_PATH);
+			path[strlen(dirent->d_name)] = '\0';
+			break;
+
+		}
+
+	}
+
+	closedir(dirp);
+	return rc;
+
+}
+
+/*
+ * This is a generic write function.
+ */
+int write_file_contents(char *path,
+			int flags,
+			mode_t mode,
+			void *buf,
+			size_t len)
+{
+
+	int fd;
+	int bytes_written;
+	int rc = EOK;
+
+	fd = open(path, flags, mode);
+	if (fd == -1)
+	{
+
+		rc = errno;
+		return rc;
+
+	}
+
+	bytes_written = write(fd, buf, len);
+	if (bytes_written != len)
+	{
+		rc = errno;
+	}
+
+	close(fd);
+	return rc;
+
+}
+

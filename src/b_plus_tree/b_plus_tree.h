@@ -1,4 +1,5 @@
 #include "../include/header.h"
+#define BPLUS_MAX_HEIGHT 5
 
 /*
  * Following structure will remain on every node.
@@ -11,7 +12,7 @@ typedef struct block_head
 	uint8_t level;
 	uint8_t pad;
 
-}block_head_t;
+}block_head_st;
 
 /*
  * Following structure represents on-disk 64 bit key. This will remain on internal
@@ -20,20 +21,19 @@ typedef struct block_head
 typedef struct b_plus_tree_key
 {
 
-	uint32_t path_hash;
-	uint32_t gen_num;
+	ino_t i_ino;
 
 }b_plus_tree_key_t;
 
 /*
  * Following structure stores inode no. of file of next pointer.
  */
-struct disk_child
+typedef struct disk_child
 {
 
-	ino_t inode_no;
+	ino_t i_ino;
 
-}disk_child_t;
+}disk_child_st;
 
 /*
  * Structure of internal node of the btree
@@ -48,32 +48,51 @@ struct disk_child
  */
 
 /*
- * Following structure represents metadata for item. It will only occupy leaf node.
- */
-typedef struct item_head
-{
-
-	b_plus_tree_key_t ih_key;
-	uint32_t item_location;
-
-}item_head_t;
-
-/*
  * Following structure represents item stored on-disk.
  */
 typedef struct item
 {
 
-	ino_t inode_no;
+	ino_t i_ino;
 
-}item_t;
+}item_st;
 
 /* 
  * Typical structure for leaf block is as follow :
  * ----------------------------------------------------
- * |Block | item_head1,		| item2,	|
- * |Head  | item_head2,  	| item1.	|
- * |	  | 			| 		|
+ * |Block | item1,	|			|
+ * |Head  | item2,	| 			|
  * -----------------------------------------------------
  */
+
+typedef struct path_element
+{
+
+	/*
+	 * In-memory contents of the file.
+	 */
+	void *pe_node;
+
+	/*
+	 * Position at which the key is located.
+	 */
+	int pe_position;
+
+	/*
+	 * path in meta directory.
+	 */
+	char *pe_path;
+
+}path_element_st;
+
+/*
+ * Follwoing structure represents complete path of a key in b+ tree. It starts from 
+ * root to the leaf block where key is located.
+ */
+typedef struct bplus_tree_traverse_path
+{
+
+	path_element_st path_elements[BPLUS_MAX_HEIGHT];
+
+}bplus_tree_traverse_path_st;
 

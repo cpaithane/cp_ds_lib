@@ -10,7 +10,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
 
+#define MAX_PATH 256
 #define TRUE 1
 #define FALSE 0
 
@@ -63,6 +65,24 @@ void *find_smallest_from_three(
 			    void * left_child,
 			    void *right_child,
 			    common_data_compare_t compare);
+
+int is_path_present(char *path, ino_t *i_ino);
+
+int read_file_contents(
+                char *path,
+                void *buf,
+                int read_flags,
+                mode_t mode,
+                size_t len);
+
+int write_file_contents(char *path,
+			int flags,
+			mode_t mode,
+			void *buf,
+			size_t len);
+
+int get_path(char *parent_dir, ino_t i_ino, char *path);
+
 
 /*
  * Following functions are entry points for test cases.
