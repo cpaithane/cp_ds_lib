@@ -465,6 +465,31 @@ char *bplus_tree_get_pe_path_path(bplus_tree_traverse_path_st *traverse_path,
 }
 
 /*
+ * This function writes key and two disk children in an internal node.
+ * This should be called where no item is added into internal node.
+ */
+void bplus_tree_init_internal_node(void *new_internal_node,
+				   b_plus_tree_key_t *key,
+				   disk_child_st *dc0,
+				   disk_child_st *dc1)
+{
+
+	block_head_st *block_head;
+	CHECK_RC_ASSERT((new_internal_node == NULL), 0);
+	CHECK_RC_ASSERT((key == NULL), 0);
+	CHECK_RC_ASSERT((dc0 == NULL), 0);
+	CHECK_RC_ASSERT((dc1 == NULL), 0);
+
+	block_head = bplus_tree_get_block_head(new_internal_node);
+	CHECK_RC_ASSERT(block_head->nr_items, 0);
+	CHECK_RC_ASSERT((block_head->level == BTREE_LEAF_LEVEL), 0);
+	bplus_tree_punch_key(new_internal_node, key, 0);
+	bplus_tree_punch_dc(new_internal_node, dc0, 0);
+	bplus_tree_punch_dc(new_internal_node, dc1, 1);
+
+}
+
+/*
  * This is case #1 : 
  * This is a case where left and right neighbour is not present. That means, it is 
  * a single node b+ tree where root is full and new insertion request has 
@@ -477,12 +502,12 @@ int bplus_tree_flow_item_case1(
 			    bool flow_mode,
 			    void *leaf_node,
 			    void *new_leaf_node,
-			    void *new_internal_node,
+			    void *internal_node,
 			    item_st *item,
 			    char *internal_node_path,
 			    char *new_leaf_node_path,
 			    ino_t new_leaf_ino,
-			    ino_t new_internal_ino)
+			    ino_t internal_ino)
 {
 
 	int i, rc = EOK;
@@ -546,13 +571,6 @@ int bplus_tree_flow_item_case1(
 	key.i_ino = first_item->i_ino;
 
 	/*
-	 * Now, adjust internal node's level.
-	 */
-	block_head = bplus_tree_get_block_head(new_internal_node);
-	block_head->level = (BTREE_LEAF_LEVEL + 1);
-	bplus_tree_punch_key(new_internal_node, &key, 0);
-
-	/*
 	 * 2. Also, disk_children needs to be formed in internal node.
 	 */
 	tmp_path = bplus_tree_get_pe_path_path(
@@ -575,11 +593,34 @@ int bplus_tree_flow_item_case1(
 		dc0.i_ino = new_leaf_ino;
 
 	}
-	bplus_tree_punch_dc(new_internal_node, &dc0, 0);
-	bplus_tree_punch_dc(new_internal_node, &dc1, 1);
 
 	/*
-	 * 3. Attach the internal and leaf nodes to tb and flush.
+	 * If internal node is empty, then punch in key and 2 disk children
+	 * Also, punch in the newly written internal_node in traverse_path.
+	 *
+	 * Now, root is changed. New root is internal_node here. Previously, root 
+	 * was leaf_node. So, exchage the contents between leaf_node and internal 
+	 * node.
+	 * Adjust internal node's level.
+	 */
+	block_head = bplus_tree_get_block_head(internal_node);
+	if (block_head->nr_items == 0)
+	{
+
+		block_head->level = (BTREE_LEAF_LEVEL + 1);
+		bplus_tree_init_internal_node(internal_node,
+					      &key, &dc0, &dc1);
+		bplus_tree_copy_pe(tb->tb_path,
+				   internal_node,
+				   (BTREE_LEAF_LEVEL + 1),
+				   0, internal_node_path);
+
+		rc = bplus_tree_adjust_root(tb->tb_root_path, internal_ino);
+
+	}
+
+	/*
+	 * 3. Attach the leaf node to tb and flush.
 	 */
 	path_element = (path_element_st *)malloc(PE_SIZE);
 	CHECK_RC_ASSERT((path_element == NULL), 0);
@@ -610,25 +651,13 @@ int bplus_tree_flow_item_case1(
 
 	}
 
-	bplus_tree_copy_pe(tb->tb_path,
-			   new_internal_node,
-			   (BTREE_LEAF_LEVEL + 1),
-			   0, internal_node_path);
-
-	/*
-	 * Now, root is changed. New root is internal_node here. Previously, root 
-	 * was leaf_node. So, exchage the contents between leaf_node and internal 
-	 * node.
-	 */
-	rc = bplus_tree_adjust_root(tb->tb_root_path, new_internal_ino);
-
 	return rc;
 
 }
 
 /*
- * During re-balancing of B+ tree, root could be changed. This function renames file
- * 
+ * During re-balancing of B+ tree, root could be changed. This function writes file
+ * inode of root into root_path.
  */
 int bplus_tree_adjust_root(char *root_path, ino_t new_root_ino)
 {
@@ -649,19 +678,21 @@ int bplus_tree_adjust_root(char *root_path, ino_t new_root_ino)
 int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 				item_st *item,
 				ino_t new_leaf_ino,
-				ino_t new_internal_ino,
 				bool flow_mode)
 {
 
 	int i, rc = EOK;
-	char *new_internal_node_path, *new_leaf_node_path, *tmp_path;
-	void *leaf_node, *new_leaf_node, *node, *new_internal_node;
+	char *internal_node_path, *new_leaf_node_path, *tmp_path;
+	void *leaf_node, *new_leaf_node, *node, *internal_node;
+	void *parent_node;
 	bplus_tree_traverse_path_st *traverse_path;
+	block_head_st *block_head;
+	ino_t internal_ino;
 
 	traverse_path = tb->tb_path;
 
-	new_internal_node_path = (char *)malloc(MAX_PATH);
-	CHECK_RC_ASSERT((new_internal_node_path == NULL), 0);
+	internal_node_path = (char *)malloc(MAX_PATH);
+	CHECK_RC_ASSERT((internal_node_path == NULL), 0);
 
 	new_leaf_node_path = (char *)malloc(MAX_PATH);
 	CHECK_RC_ASSERT((new_leaf_node_path == NULL), 0);
@@ -669,8 +700,8 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 	new_leaf_node = (void *)malloc(NODE_SIZE);
 	CHECK_RC_ASSERT((new_leaf_node == NULL), 0);
 
-	new_internal_node = (void *)malloc(NODE_SIZE);
-	CHECK_RC_ASSERT((new_internal_node == NULL), 0);
+	internal_node = (void *)malloc(NODE_SIZE);
+	CHECK_RC_ASSERT((internal_node == NULL), 0);
 
 	rc = get_path(META_DIR, new_leaf_ino, new_leaf_node_path);
 	CHECK_RC_ASSERT(rc, EOK);
@@ -682,11 +713,35 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 				NODE_SIZE);
 	CHECK_RC_ASSERT(rc, EOK);
 
-	rc = get_path(META_DIR, new_internal_ino, new_internal_node_path);
-	CHECK_RC_ASSERT(rc, EOK);
+	/*
+	 * If a node at level up to BTREE_LEAF_LEVEL is not present, then allocate
+	 * it. 
+	 * Else, figure out internal node path from traverse_path.
+	 */
+	parent_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL + 1);
+	if (parent_node == NULL)
+	{
 
-	rc = read_file_contents(new_internal_node_path,
-				new_internal_node,
+		rc = bplus_tree_get_new_node(&internal_ino);
+		CHECK_RC_ASSERT(rc, EOK);
+
+		rc = get_path(META_DIR, internal_ino, internal_node_path);
+		CHECK_RC_ASSERT(rc, EOK);
+
+	}
+	else
+	{
+
+		internal_node_path = bplus_tree_get_pe_path_path(
+					traverse_path,
+					(BTREE_LEAF_LEVEL + 1));
+		rc = is_path_present(internal_node_path, &internal_ino);
+		CHECK_RC_ASSERT(rc, EOK);
+
+	}
+
+	rc = read_file_contents(internal_node_path,
+				internal_node,
 				READ_FLAGS,
 				READ_MODE,
 				NODE_SIZE);
@@ -697,20 +752,26 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 	/*
 	 * Case 1.
 	 */
-	if ((tb->tb_nr_right[BTREE_LEAF_LEVEL] == 0) &&
-	    (tb->tb_nr_left[BTREE_LEAF_LEVEL] == 0))
+	block_head = bplus_tree_get_block_head(internal_node);
+	if (block_head->nr_items < (MAX_KEYS + MAX_DC))
 	{
+
 		rc = bplus_tree_flow_item_case1(tb, flow_mode, leaf_node,
-			new_leaf_node, new_internal_node, item, 
-			new_internal_node_path,
+			new_leaf_node, internal_node, item, 
+			internal_node_path,
 			new_leaf_node_path,
-			new_leaf_ino, new_internal_ino);
+			new_leaf_ino, internal_ino);
+
+	}
+	else
+	{
+		return ENOTSUP;
 	}
 
 	free(new_leaf_node_path);
-	free(new_internal_node_path);
+	free(internal_node_path);
 	free(new_leaf_node);
-	free(new_internal_node);
+	free(internal_node);
 	return rc;
 
 }
@@ -751,6 +812,44 @@ int bplus_tree_flow_item(void *src, void *dest)
 	block_head_dest->free_space -= ITEM_SIZE;
 	block_head_src->free_space += ITEM_SIZE;
 
+	return rc;
+
+}
+
+/*
+ * This function allocates new b+ tree node from allocator and formats it.
+ * It also returns inode no. of newly created node.
+ */
+int bplus_tree_get_new_node(ino_t *i_ino)
+{
+
+	char *path;
+	int rc = EOK;
+	ino_t node_num;
+
+	path = (char *)malloc(MAX_PATH);
+	CHECK_RC_ASSERT((path == NULL), 0);
+
+	rc = bplus_tree_allocate_node_num(&node_num);
+	if (rc != EOK)
+	{
+
+		free(path);
+		return rc;
+
+	}
+
+	snprintf(path, MAX_PATH, "%s/%d", META_DIR, (int)node_num);
+	rc = bplus_tree_allocate_node(path, i_ino);
+	if (rc != EOK)
+	{
+
+		free(path);
+		return rc;
+
+	}
+
+	free(path);
 	return rc;
 
 }

@@ -34,6 +34,7 @@
 int bplus_tree_init(char *meta_dir, char *root_path, bool force_init);
 int bplus_tree_write_root_path(char *root_path, ino_t root_ino);
 int bplus_tree_format_node(char *file);
+int bplus_tree_get_new_node(ino_t *i_ino);
 int bplus_tree_allocate_node(char *path, ino_t *i_ino);
 int bplus_tree_deinit(char *meta_dir);
 
@@ -133,7 +134,6 @@ int bplus_tree_rebalance_internal_insert(bplus_tree_balance_st *tb,
 int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 				item_st *item,
 				ino_t new_leaf_ino,
-				ino_t new_internal_ino,
 				bool flow_mode);
 
 int bplus_tree_flow_item_case1(
@@ -151,4 +151,9 @@ int bplus_tree_flow_item_case1(
 bool bplus_tree_find_flow_dir(int pe_position);
 
 int bplus_tree_adjust_root(char *root_path, ino_t new_root_ino);
+
+void bplus_tree_init_internal_node(void *new_internal_node,
+                                   b_plus_tree_key_t *key,
+                                   disk_child_st *dc0,
+                                   disk_child_st *dc1);
 

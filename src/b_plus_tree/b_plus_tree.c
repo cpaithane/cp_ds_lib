@@ -697,13 +697,12 @@ int bplus_tree_rebalance_leaf_insert(bplus_tree_balance_st *tb, item_st *item)
 {
 
 	int rc = EOK;
-	int pe_position, i;
+	int pe_position;
 	void *leaf_node;
-	char *path;
 	bool flow;
 	block_head_st *block_head;
 	bplus_tree_traverse_path_st *traverse_path;
-	ino_t i_ino, ino_arr[2], leaf_ino, internal_ino, node_num;
+	ino_t leaf_ino;
 
 	traverse_path = tb->tb_path;
 	
@@ -716,42 +715,13 @@ int bplus_tree_rebalance_leaf_insert(bplus_tree_balance_st *tb, item_st *item)
 
 	flow = bplus_tree_find_flow_dir(pe_position);
 
-	path = (char *)malloc(MAX_PATH);
-	CHECK_RC_ASSERT((path == NULL), 0);
-
 	/*
-	 * Allocate internal and leaf node to accommodate the item.
+	 * Allocate leaf node to accommodate the item.
 	 */
-	for (i = 0; i < 2; i++)
-	{
+	rc = bplus_tree_get_new_node(&leaf_ino);
+	CHECK_RC_ASSERT(rc, EOK);
 
-		rc = bplus_tree_allocate_node_num(&node_num);
-		if (rc != EOK)
-		{
-
-			free(path);
-			return rc;
-
-		}
-
-		snprintf(path, MAX_PATH, "%s/%d", META_DIR, (int)node_num);
-		rc = bplus_tree_allocate_node(path, &i_ino);
-		if (rc != EOK)
-		{
-
-			free(path);
-			return rc;
-
-		}
-
-		ino_arr[i] = i_ino;
-
-	}
-
-	leaf_ino = ino_arr[0];
-	internal_ino = ino_arr[1];
-	rc = bplus_tree_flow_item_handle(tb, item, leaf_ino,
-					 internal_ino, flow);
+	rc = bplus_tree_flow_item_handle(tb, item, leaf_ino, flow);
 
 	return rc;
 
