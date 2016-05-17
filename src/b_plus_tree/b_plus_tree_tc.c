@@ -1,6 +1,7 @@
 #include "b_plus_tree_interface.h"
 
 #define DATA ".data"
+#define MAX_INPUT_ITEMS 3072
 
 /*
  * This function forms a file name using iterator. Strictly, used for unit test 
@@ -49,7 +50,7 @@ int bplus_test_case1()
 	{
 
 		mkdir (DATA, 0744);
-		for (i = 0; i < MAX_ITEMS; i++)
+		for (i = 0; i < MAX_INPUT_ITEMS; i++)
 		{
 
 			get_file_name(file_name, i);
@@ -63,12 +64,16 @@ int bplus_test_case1()
 	/*
 	 * Insert the inode no. of file into b+ tree.
 	 */
-	for (i = 0; i < MAX_ITEMS; i++)
+	for (i = 0; i < MAX_INPUT_ITEMS; i++)
 	{
 
 		get_file_name(file_name, i);
 		rc = bplus_tree_insert(ROOT, file_name);
 		CHECK_RC_ASSERT(rc, EOK);
+		rc = bplus_form_key(file_name, key);
+		CHECK_RC_ASSERT(rc, EOK);
+		rc = bplus_tree_search_key(ROOT, key, traverse_path);
+		CHECK_RC_ASSERT(rc, EEXIST);
 
 	}
 
@@ -76,7 +81,7 @@ int bplus_test_case1()
 	 * Now, search the items in b+ tree.
 	 */
 	printf("Data in B+ tree\n");
-	for (i = 0; i < MAX_ITEMS; i++)
+	for (i = 0; i < MAX_INPUT_ITEMS; i++)
 	{
 	
 		get_file_name(file_name, i);
@@ -89,7 +94,8 @@ int bplus_test_case1()
 		rc = bplus_tree_search_key(ROOT, key, traverse_path);
 		CHECK_RC_ASSERT(rc, EEXIST);
 
-		leaf_node = bplus_tree_get_leaf_path(traverse_path);
+		leaf_node = bplus_tree_get_node_path(traverse_path,
+						    BTREE_LEAF_LEVEL);
 		CHECK_RC_ASSERT((leaf_node == NULL), 0);
 
 		position = bplus_tree_get_pos_path(traverse_path, BTREE_LEAF_LEVEL);
@@ -102,11 +108,13 @@ int bplus_test_case1()
 
 	}
 
+#ifdef DELETE_SUPPORT
+
 	/*
 	 * Delete the inode no. of file into b+ tree.
 	 * Then, lookup inside b+ tree for the key just deleted.
 	 */
-	for (i = 0; i < MAX_ITEMS; i++)
+	for (i = 0; i < MAX_INPUT_ITEMS; i++)
 	{
 
 		get_file_name(file_name, i);
@@ -131,10 +139,11 @@ int bplus_test_case1()
 	rc = bplus_tree_search_key(ROOT, key, traverse_path);
 	CHECK_RC_ASSERT(rc, ENOENT);
 
-	for (i = 0; i < MAX_ITEMS; i++)
+	for (i = 0; i < MAX_INPUT_ITEMS; i++)
 	{
 
-		leaf_node = bplus_tree_get_leaf_path(traverse_path);
+		leaf_node = bplus_tree_get_node_path(traverse_path,
+						    BTREE_LEAF_LEVEL);
 		item = bplus_tree_get_item(leaf_node, i);
 		CHECK_RC_ASSERT(item->i_ino, 0);
 
@@ -143,6 +152,8 @@ int bplus_test_case1()
 	block_head = bplus_tree_get_block_head(leaf_node);
 	CHECK_RC_ASSERT(block_head->nr_items, 0);
 	CHECK_RC_ASSERT(block_head->free_space, (NODE_SIZE - BLOCK_HEAD_SIZE));
+
+#endif
 
 	rc = bplus_tree_deinit(META_DIR);
 	CHECK_RC_ASSERT(rc, EOK);

@@ -1,6 +1,26 @@
 #include "b_plus_tree_interface.h"
 
 /*
+ * This function writes inode no. of root node into file pointed by root_path.
+ */
+int bplus_tree_write_root_path(char *root_path, ino_t root_ino)
+{
+
+	int rc = EOK;
+
+	CHECK_RC_ASSERT((root_path == NULL), 0);
+
+	rc = write_file_contents(root_path,
+				 OPEN_FLAGS,
+				 WRITE_MODE,
+				 &root_ino,
+				 sizeof(ino_t));
+	CHECK_RC_ASSERT(rc, EOK);
+	return rc;
+
+}
+
+/*
  * This function initializes b+ tree subsystem which involves following :
  * 1. Create meta directory. This directory stores all the internal and leaf nodes.
  * 2. Create and format root node of b+ tree.
@@ -14,6 +34,7 @@ int bplus_tree_init(char *meta_dir, char *root_path, bool force_init)
 
 	int rc = EOK, rc1;
 	ino_t i_ino, meta_i_ino;
+	char *path;
 
 	CHECK_RC_ASSERT((meta_dir == NULL), 0);
 	CHECK_RC_ASSERT((root_path == NULL), 0);
@@ -52,9 +73,26 @@ int bplus_tree_init(char *meta_dir, char *root_path, bool force_init)
 	CHECK_RC_ASSERT(rc, EOK);
 
 	/*
-	 * Now, create root node of the plus tree under .meta.
+	 * Now, allocate a root node of the B+ tree under .meta.
 	 */
-	rc = bplus_tree_allocate_node(root_path, &i_ino);
+	rc = bplus_tree_allocate_node_num(&i_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	path = (char *)malloc(MAX_PATH);
+	CHECK_RC_ASSERT((path == NULL), 0);
+	memset(path, 0, MAX_PATH);
+	snprintf(path, MAX_PATH, "%s/%d", META_DIR, (int)i_ino);
+
+	/*
+	 * Now, format the root node pointed by path. We will get inode no. of root.
+	 */
+	rc = bplus_tree_allocate_node(path, &i_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	/*
+	 * Write the inode no. in to root file.
+	 */
+	rc = bplus_tree_write_root_path(root_path, i_ino);
 	CHECK_RC_ASSERT(rc, EOK);
 
 	return rc;
@@ -178,6 +216,7 @@ int bplus_tree_delete(char *root_path, char *path)
 	traverse_path = (bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
 	CHECK_RC_ASSERT((traverse_path == NULL), 0);
 	memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
+	traverse_path->path_length = INVALID_PATH_LENGTH;
 
 	rc = bplus_tree_search_key(root_path, key, traverse_path);
 	if (rc == ENOENT)
@@ -247,6 +286,7 @@ int bplus_tree_insert(char *root_path, char *path)
 	traverse_path = (bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
 	CHECK_RC_ASSERT((traverse_path == NULL), 0);
 	memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
+	traverse_path->path_length = INVALID_PATH_LENGTH;
 
 	rc = bplus_tree_search_key(root_path, key, traverse_path);
 	if (rc == EEXIST)
@@ -262,7 +302,7 @@ int bplus_tree_insert(char *root_path, char *path)
 	CHECK_RC_ASSERT((item == NULL), 0);
 	bplus_tree_form_item(key, item);
 
-	rc = bplus_tree_insert_item(traverse_path, item);
+	rc = bplus_tree_insert_item(root_path, traverse_path, item);
 	if (rc != EOK)
 	{
 
@@ -335,6 +375,7 @@ int bplus_tree_search_key(char *root_path,
 	uint8_t level;
 	int position = -1;
 	int len, item_len;
+	ino_t root_ino;
 
 	CHECK_RC_ASSERT((root_path == NULL), 0);
 	CHECK_RC_ASSERT((key == NULL), 0);
@@ -345,6 +386,17 @@ int bplus_tree_search_key(char *root_path,
 
 	next_path = (char *)malloc(MAX_PATH);
 	CHECK_RC_ASSERT((next_path == NULL), 0);
+
+	rc = read_file_contents(root_path,
+				&root_ino,
+				READ_FLAGS,
+				READ_MODE,
+				sizeof(ino_t));
+	CHECK_RC_ASSERT(rc, EOK);
+
+	rc = get_path(META_DIR, root_ino, next_path);
+	CHECK_RC_ASSERT(rc, EOK);
+	path = next_path;
 
 	while (1)
 	{
@@ -370,18 +422,25 @@ int bplus_tree_search_key(char *root_path,
 			is_leaf = TRUE;
 		}
 
-		rc = bin_search(buf, key, block_head->nr_items, &position, is_leaf);
+		rc = bin_search(buf, key, (block_head->nr_items - 1),
+				&position, is_leaf);
 		bplus_tree_copy_pe(traverse_path, buf, level, position, path);
 
-		if (rc == EEXIST)
+		/*
+		 * If we reach at the leaf block, break.
+		 */
+		if (is_leaf == TRUE)
 		{
 			break;
 		}
 
-		if (level == BTREE_LEAF_LEVEL)
-		{
-			break;
-		}
+		/*
+		 * Now, following case cover for internal block.
+		 */
+		/*
+		 * Don't break for internal node even if key exists.
+		 * Let's go for next level down.
+		 */
 
 		dc = bplus_tree_get_dc(buf, position);
 		rc = get_path(META_DIR, dc->i_ino, next_path);
@@ -429,7 +488,7 @@ int bplus_key_compare(const void *key1, const void *key2)
 int bin_search(
 	void *buf,
 	b_plus_tree_key_t *key,
-	uint16_t nr_items,
+	int16_t nr_items,
 	int *position,
 	bool is_leaf)
 {
@@ -437,12 +496,16 @@ int bin_search(
 	int rc = ENOENT;
 	int start = 0;
 	int end = nr_items;
-	int mid = (start + end) / (2);
-	int i;
+	int i, mid;
 	b_plus_tree_key_t key_to_compare;
 	item_st *item;
 
 	*position = 0;
+
+	if (is_leaf == FALSE)
+	{
+		end = NR_KEYS(nr_items);
+	}
 
 	while (start <= end)
 	{
@@ -477,7 +540,19 @@ int bin_search(
 		{
 
 			rc = EEXIST;
-			*position = mid;
+
+			/*
+			 * If it is internal node, right disk_child is located at 
+			 * 1 position ahead of key.
+			 */
+			if (is_leaf == TRUE)
+			{
+				*position = mid;
+			}
+			else
+			{
+				*position = mid + 1;
+			}
 			break;
 
 		}
@@ -506,7 +581,7 @@ int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
 	block_head_st *block_head = NULL;
 	item_st *tmp_item1 = NULL;
 
-	leaf_node = bplus_tree_get_leaf_path(traverse_path);
+	leaf_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
 	CHECK_RC_ASSERT((leaf_node == NULL), 0);
 
 	block_head = bplus_tree_get_block_head(leaf_node);
@@ -535,7 +610,8 @@ int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
 /*
  * This function inserts an item and re-balances b+ tree.
  */
-int bplus_tree_insert_item(bplus_tree_traverse_path_st *traverse_path, 
+int bplus_tree_insert_item(char *root_path,
+			   bplus_tree_traverse_path_st *traverse_path, 
 			   item_st *item)
 {
 
@@ -555,7 +631,11 @@ int bplus_tree_insert_item(bplus_tree_traverse_path_st *traverse_path,
 	 */
 	if (block_head->nr_items == MAX_ITEMS)
 	{
-		return ENOTSUP;
+
+		rc = bplus_tree_rebalance(root_path,
+					  traverse_path,
+					  item, BPLUS_INSERT);
+		return rc;
 	}
 
 	/*
@@ -566,10 +646,189 @@ int bplus_tree_insert_item(bplus_tree_traverse_path_st *traverse_path,
 	/*
 	 * Punch in item at location i.
 	 */
-	tmp_item = bplus_tree_get_item(leaf_node, i);
-	memcpy(tmp_item, item, ITEM_SIZE);
-	(block_head->nr_items)++;
-	block_head->free_space -= ITEM_SIZE;
+	bplus_tree_punch_item(leaf_node, item, i);
+
+	return rc;
+
+}
+
+/*
+ * This function does rebalancing of b+ tree while insertion.
+ */
+int bplus_tree_rebalance_insert(char *root_path,
+				bplus_tree_traverse_path_st *traverse_path,
+				item_st *item)
+{
+
+	int i, rc = EOK;
+	bplus_tree_balance_st *tb;
+
+	tb = bplus_tree_init_tb(root_path, traverse_path);
+	CHECK_RC_ASSERT((tb == NULL), 0);
+
+	rc = bplus_tree_rebalance_insert_handle(tb, item);
+	if (rc != EOK)
+	{
+	
+		bplus_tree_deinit_tb(tb);
+		return rc;
+
+	}
+
+	rc = bplus_tree_flush_tb(tb);
+	if (rc != EOK)
+	{
+
+		bplus_tree_deinit_tb(tb);
+		return rc;
+
+	}
+
+	bplus_tree_deinit_tb(tb);
+
+	return rc;
+
+}
+
+/*
+ * This function rebalances leaf node.
+ */
+int bplus_tree_rebalance_leaf_insert(bplus_tree_balance_st *tb, item_st *item)
+{
+
+	int rc = EOK;
+	int pe_position, i;
+	void *leaf_node;
+	char *path;
+	bool flow;
+	block_head_st *block_head;
+	bplus_tree_traverse_path_st *traverse_path;
+	ino_t i_ino, ino_arr[2], leaf_ino, internal_ino, node_num;
+
+	traverse_path = tb->tb_path;
+	
+	leaf_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
+	CHECK_RC_ASSERT((leaf_node == NULL), 0);
+
+	pe_position = bplus_tree_get_pos_path(traverse_path, BTREE_LEAF_LEVEL);
+	block_head = bplus_tree_get_block_head(leaf_node);
+	CHECK_RC_ASSERT(block_head->nr_items, MAX_ITEMS);
+
+	flow = bplus_tree_find_flow_dir(pe_position);
+
+	path = (char *)malloc(MAX_PATH);
+	CHECK_RC_ASSERT((path == NULL), 0);
+
+	/*
+	 * Allocate internal and leaf node to accommodate the item.
+	 */
+	for (i = 0; i < 2; i++)
+	{
+
+		rc = bplus_tree_allocate_node_num(&node_num);
+		if (rc != EOK)
+		{
+
+			free(path);
+			return rc;
+
+		}
+
+		snprintf(path, MAX_PATH, "%s/%d", META_DIR, (int)node_num);
+		rc = bplus_tree_allocate_node(path, &i_ino);
+		if (rc != EOK)
+		{
+
+			free(path);
+			return rc;
+
+		}
+
+		ino_arr[i] = i_ino;
+
+	}
+
+	leaf_ino = ino_arr[0];
+	internal_ino = ino_arr[1];
+	rc = bplus_tree_flow_item_handle(tb, item, leaf_ino,
+					 internal_ino, flow);
+
+	return rc;
+
+}
+
+/*
+ * This function rebalances internal node.
+ */
+int bplus_tree_rebalance_internal_insert(bplus_tree_balance_st *tb,
+					 item_st *item, uint8_t level)
+{
+
+	int rc = EOK;
+
+	return rc;
+
+}
+
+/*
+ * This function handles internal nittie-gritties of rebalancing while insertion.
+ */
+int bplus_tree_rebalance_insert_handle(bplus_tree_balance_st *tb, item_st *item)
+{
+
+	int rc = EOK;
+	int i;
+
+	for (i = 0; i < BPLUS_MAX_HEIGHT; i++)
+	{
+
+		if (i == BTREE_LEAF_LEVEL)
+		{
+			rc = bplus_tree_rebalance_leaf_insert(tb, item);
+		}
+		else
+		{
+			rc = bplus_tree_rebalance_internal_insert(tb, item, i);
+		}
+
+	}
+
+	return rc;
+
+}
+
+/*
+ * This function does rebalancing of b+ tree while deletion.
+ */
+int bplus_tree_rebalance_delete(bplus_tree_traverse_path_st *traverse_path,
+				item_st *item)
+{
+
+	int rc = EOK;
+
+	return rc;
+
+}
+
+/*
+ * This is driver function for rebalance of b+ tree.
+ */
+int bplus_tree_rebalance(char *root_path,
+			 bplus_tree_traverse_path_st *traverse_path,
+			 item_st *item,
+			 rebalnce_mode_et mode)
+{
+
+	int rc = EOK;
+
+	if (mode == BPLUS_INSERT)
+	{
+		rc = bplus_tree_rebalance_insert(root_path, traverse_path, item);
+	}
+	else
+	{
+		rc = bplus_tree_rebalance_delete(traverse_path, item);
+	}
 
 	return rc;
 

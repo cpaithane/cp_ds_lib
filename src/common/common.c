@@ -186,6 +186,7 @@ int get_path(char *parent_dir, ino_t i_ino, char *path)
 	int rc = EOK;
 	struct dirent *dirent = NULL;
 	DIR *dirp = NULL;
+	int bytes_copied;
 
 	CHECK_RC_ASSERT((path == NULL), 0);
 	CHECK_RC_ASSERT((parent_dir == NULL), 0);
@@ -208,8 +209,12 @@ int get_path(char *parent_dir, ino_t i_ino, char *path)
 		if (dirent->d_ino == i_ino)
 		{
 
-			memcpy(path, dirent->d_name, MAX_PATH);
-			path[strlen(dirent->d_name)] = '\0';
+			memset(path, 0, MAX_PATH);
+			snprintf(path, MAX_PATH, "%s/%s",
+				 parent_dir, dirent->d_name);
+			bytes_copied = strlen(dirent->d_name) + 
+					strlen(parent_dir) + 1;
+			path[bytes_copied] = '\0';
 			break;
 
 		}

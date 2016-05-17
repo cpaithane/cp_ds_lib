@@ -1,5 +1,27 @@
 #include "../include/header.h"
+#include "../sll/sll.h"
+
 #define BPLUS_MAX_HEIGHT 5
+#define BPLUS_INSERT 0
+#define BPLUS_DELETE 1
+#define LEFT 0
+#define RIGHT 1
+
+typedef enum rebalnce_mode
+{
+
+	rebalance_insert = BPLUS_INSERT,
+	rebalance_delete = BPLUS_DELETE
+
+}rebalnce_mode_et;
+
+typedef enum neighbor
+{
+
+	neighbor_left = LEFT,
+	neighbor_right = RIGHT
+
+}neighbor_et;
 
 /*
  * Following structure will remain on every node.
@@ -93,6 +115,35 @@ typedef struct bplus_tree_traverse_path
 {
 
 	path_element_st path_elements[BPLUS_MAX_HEIGHT];
+	int path_length;
 
 }bplus_tree_traverse_path_st;
+
+/*
+ * Following structure holds information necessary for re-balancing of b+ tree.
+ */
+typedef struct bplus_tree_balance
+{
+
+	/*
+	 * Path where root inode no. is stored.
+	 */
+	char *tb_root_path;
+
+	/*
+	 * Traverse path for the item involved in rebalancing.
+	 */
+	bplus_tree_traverse_path_st *tb_path;
+
+	/*
+	 * Left/right siblings of the node.
+	 */
+	sll_st *tb_left[BPLUS_MAX_HEIGHT], *tb_right[BPLUS_MAX_HEIGHT];
+
+	/*
+	 * No. of left/right siblings stored at the level.
+	 */
+	int tb_nr_left[BPLUS_MAX_HEIGHT], tb_nr_right[BPLUS_MAX_HEIGHT];
+
+}bplus_tree_balance_st;
 
