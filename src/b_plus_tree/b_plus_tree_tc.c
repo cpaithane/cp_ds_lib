@@ -1,7 +1,7 @@
 #include "b_plus_tree_interface.h"
 
 #define DATA ".data"
-#define MAX_INPUT_ITEMS 3072
+#define MAX_INPUT_ITEMS 16512
 
 /*
  * This function forms a file name using iterator. Strictly, used for unit test 
@@ -17,7 +17,7 @@ void get_file_name(char *file_name, int i)
 }
 
 /*
- * This test case tests simple insertion/lookup of 2048 objects inside b+ tree.
+ * This test case tests simple insertion/lookup of 16512 objects inside b+ tree.
  */
 int bplus_test_case1()
 {

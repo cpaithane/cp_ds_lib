@@ -15,7 +15,7 @@
 
 #define BTREE_LEAF_LEVEL 0
 #define BLOCK_HEAD_SIZE sizeof(block_head_st)
-#define NODE_SIZE (BLOCK_HEAD_SIZE + 8192)
+#define NODE_SIZE (BLOCK_HEAD_SIZE + 1024)
 #define KEY_SIZE sizeof(b_plus_tree_key_t)
 #define TRAVERSE_PATH_SIZE sizeof(bplus_tree_traverse_path_st)
 #define PE_SIZE sizeof(path_element_st)
@@ -94,6 +94,12 @@ int bplus_tree_flush_tb(bplus_tree_balance_st *tb);
 int bplus_tree_flush_traverse_path(bplus_tree_traverse_path_st *traverse_path);
 int bplus_tree_free_traverse_path(bplus_tree_traverse_path_st *traverse_path);
 
+int bplus_tree_shift_right_keys(void *internal_node,
+                                b_plus_tree_key_t *key,
+                                uint16_t nr_keys);
+
+int bplus_tree_shift_right_dc(void *internal_node, int position, uint16_t nr_dc);
+
 int bplus_tree_shift_left(void *leaf_node, int position, uint16_t nr_items);
 int bplus_tree_shift_right(void *leaf_node, item_st *item, uint16_t nr_items);
 
@@ -156,4 +162,8 @@ void bplus_tree_init_internal_node(void *new_internal_node,
                                    b_plus_tree_key_t *key,
                                    disk_child_st *dc0,
                                    disk_child_st *dc1);
+
+void bplus_tree_adjust_internal(void *internal_node,
+                                b_plus_tree_key_t *key,
+                                disk_child_st *dc);
 

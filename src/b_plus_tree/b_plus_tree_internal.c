@@ -377,6 +377,67 @@ int bplus_tree_shift_left(void *leaf_node, int position, uint16_t nr_items)
 }
 
 /*
+ * This function right shifts disk children to make space at position.
+ */
+int bplus_tree_shift_right_dc(void *internal_node, int position, uint16_t nr_dc)
+{
+
+	disk_child_st *dc1, *dc2;
+	int j;
+
+	for (j = nr_dc; j > position; j--)
+	{
+
+		dc1 = bplus_tree_get_dc(internal_node, j - 1);
+		dc2 = bplus_tree_get_dc(internal_node, j);
+		memcpy(dc2, dc1, DC_SIZE);
+
+	}
+
+	return j;
+
+}
+
+/*
+ * This function shifts keys to right to find out right position for key.
+ */
+int bplus_tree_shift_right_keys(void *internal_node,
+				b_plus_tree_key_t *key,
+				uint16_t nr_keys)
+{
+
+	int i, j;
+	b_plus_tree_key_t *tmp_key = NULL;
+	b_plus_tree_key_t *tmp_key1 = NULL;
+	b_plus_tree_key_t *tmp_key2 = NULL;
+
+	for (i = 0; i < nr_keys; i++)
+	{
+
+		tmp_key = bplus_tree_get_key(internal_node, i);
+		if (key->i_ino < tmp_key->i_ino)
+		{
+
+			for (j = nr_keys; j > i; j--)
+			{
+
+				tmp_key1 = bplus_tree_get_key(internal_node, j - 1);
+				tmp_key2 = bplus_tree_get_key(internal_node, j);
+				memcpy(tmp_key2, tmp_key1, KEY_SIZE);
+
+			}
+
+			break;
+
+		}
+
+	}
+
+	return i;
+
+}
+
+/*
  * This function right shifts one item from leaf node. Returns the slot where to 
  * insert new item
  */
@@ -490,6 +551,51 @@ void bplus_tree_init_internal_node(void *new_internal_node,
 }
 
 /*
+ * This function does following things : 
+ * 1. Right shift keys to accommodate key
+ * 2. Right shift disk children to accomodate disk child
+ * 3. If right position to insert key is found to be 0, disk child will be inserted
+ * at 0 position.
+ * 4. Else, disk child will be inserted at (i+1) position.
+ */
+void bplus_tree_adjust_internal(void *internal_node,
+				b_plus_tree_key_t *key,
+				disk_child_st *dc)
+{
+
+	int i;
+	block_head_st *block_head;
+	int nr_keys, nr_dc;
+
+	block_head = bplus_tree_get_block_head(internal_node);
+	CHECK_RC_ASSERT((block_head->nr_items >= 3), 1);
+	CHECK_RC_ASSERT((block_head->level == BTREE_LEAF_LEVEL), 0);
+
+	/*
+	 * Right shift keys to find right position for key.
+	 */
+	nr_keys = NR_KEYS(block_head->nr_items);
+	nr_dc = nr_keys + 1;
+	i = bplus_tree_shift_right_keys(internal_node, key, nr_keys);
+
+	/*
+	 * Punch the key at position i.
+	 */
+	bplus_tree_punch_key(internal_node, key, i);
+
+	/*
+	 * Now, right shift disk children. Accurate position for disk child is i + 1
+	 */
+	i = bplus_tree_shift_right_dc(internal_node, i + 1, nr_dc);
+
+	/*
+	 * Now, punch disk child at position i.
+	 */
+	bplus_tree_punch_dc(internal_node, dc, i);
+
+}
+
+/*
  * This is case #1 : 
  * This is a case where left and right neighbour is not present. That means, it is 
  * a single node b+ tree where root is full and new insertion request has 
@@ -518,7 +624,7 @@ int bplus_tree_flow_item_case1(
 	char *tmp_path, *root;
 	ino_t i_ino;
 	b_plus_tree_key_t key;
-	disk_child_st dc0, dc1;
+	disk_child_st dc, dc0, dc1;
 	bplus_tree_traverse_path_st *traverse_path = tb->tb_path;
 	path_element_st *path_element;
 
@@ -610,14 +716,32 @@ int bplus_tree_flow_item_case1(
 		block_head->level = (BTREE_LEAF_LEVEL + 1);
 		bplus_tree_init_internal_node(internal_node,
 					      &key, &dc0, &dc1);
-		bplus_tree_copy_pe(tb->tb_path,
-				   internal_node,
-				   (BTREE_LEAF_LEVEL + 1),
-				   0, internal_node_path);
-
 		rc = bplus_tree_adjust_root(tb->tb_root_path, internal_ino);
 
 	}
+	else
+	{
+
+		/*
+		 * Copy appropriate disk child as per the flow_mode.
+		 */
+		if (flow_mode == RIGHT)
+		{
+			memcpy(&dc, &dc1, DC_SIZE);
+		}
+		else
+		{
+			memcpy(&dc, &dc0, DC_SIZE);
+		}
+
+		bplus_tree_adjust_internal(internal_node, &key, &dc);
+
+	}
+
+	bplus_tree_copy_pe(tb->tb_path,
+			   internal_node,
+			   (BTREE_LEAF_LEVEL + 1),
+			   0, internal_node_path);
 
 	/*
 	 * 3. Attach the leaf node to tb and flush.
@@ -685,6 +809,7 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 	char *internal_node_path, *new_leaf_node_path, *tmp_path;
 	void *leaf_node, *new_leaf_node, *node, *internal_node;
 	void *parent_node;
+	char *internal_node_path_ptr;
 	bplus_tree_traverse_path_st *traverse_path;
 	block_head_st *block_head;
 	ino_t internal_ino;
@@ -732,11 +857,16 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 	else
 	{
 
-		internal_node_path = bplus_tree_get_pe_path_path(
+		internal_node_path_ptr = bplus_tree_get_pe_path_path(
 					traverse_path,
 					(BTREE_LEAF_LEVEL + 1));
-		rc = is_path_present(internal_node_path, &internal_ino);
+		rc = is_path_present(internal_node_path_ptr, &internal_ino);
 		CHECK_RC_ASSERT(rc, EOK);
+
+		strncpy(internal_node_path,
+			internal_node_path_ptr,
+			strlen(internal_node_path_ptr));
+		internal_node_path[strlen(internal_node_path_ptr)] = '\0';
 
 	}
 
@@ -765,7 +895,7 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 	}
 	else
 	{
-		return ENOTSUP;
+		CHECK_RC_ASSERT(rc, ENOTSUP);
 	}
 
 	free(new_leaf_node_path);
@@ -957,7 +1087,7 @@ b_plus_tree_key_t *bplus_tree_get_lkey(
 	CHECK_RC_ASSERT((buf == NULL), 0);
 
 	path_length = traverse_path->path_length;
-	while (path_length)
+	while (level < path_length)
 	{
 
 		/*
@@ -966,7 +1096,6 @@ b_plus_tree_key_t *bplus_tree_get_lkey(
 		parent_node = bplus_tree_get_parent_node_path(traverse_path, level);
 		pe_position = bplus_tree_get_pos_path(traverse_path, (level + 1));
 		level++;
-		path_length--;
 
 		if (pe_position == 0)
 		{
@@ -1001,7 +1130,7 @@ b_plus_tree_key_t *bplus_tree_get_rkey(
 	CHECK_RC_ASSERT((buf == NULL), 0);
 
 	path_length = traverse_path->path_length;
-	while (path_length)
+	while (level < path_length)
 	{
 
 		/*
@@ -1010,12 +1139,31 @@ b_plus_tree_key_t *bplus_tree_get_rkey(
 		parent_node = bplus_tree_get_parent_node_path(traverse_path, level);
 		pe_position = bplus_tree_get_pos_path(traverse_path, (level + 1));
 		block_head = bplus_tree_get_block_head(parent_node);
-		level++;
-		path_length--;
 
-		if (pe_position == block_head->nr_items)
+		/*
+		 * If it is non-leaf node, nr_items counts keys and dc.
+		 * As no. of keys needs to be considered, NR_KEYS will be
+		 * calculated.
+		 */
+		if (block_head->level == BTREE_LEAF_LEVEL)
 		{
-			continue;
+
+			level++;
+			if (pe_position == block_head->nr_items)
+			{
+				continue;
+			}
+
+		}
+		else
+		{
+
+			level++;
+			if (pe_position == NR_KEYS(block_head->nr_items))
+			{
+				continue;
+			}
+
 		}
 
 		rkey = bplus_tree_get_key(parent_node, (pe_position + 1));
