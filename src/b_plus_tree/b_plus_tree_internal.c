@@ -14,23 +14,6 @@ block_head_st *bplus_tree_get_block_head(void *buf)
 }
 
 /*
- * This function returns byte position of first key in the internal block.
- */
-int bplus_tree_first_dc_pos(void *buf)
-{
-
-	int position;
-	block_head_st *block_head = NULL;
-
-	CHECK_RC_ASSERT((buf == NULL), 0);
-
-	block_head = bplus_tree_get_block_head(buf);
-	position = BLOCK_HEAD_SIZE + (block_head->nr_items * KEY_SIZE);
-	return position;
-
-}
-
-/*
  * This function copies every part of path_element.
  */
 void bplus_tree_fill_pe(void *buf,
@@ -87,7 +70,6 @@ void bplus_tree_copy_pe(bplus_tree_traverse_path_st *traverse_path,
 	traverse_path->path_elements[level].pe_node = pe->pe_node;
 	traverse_path->path_elements[level].pe_position = pe->pe_position;
 	traverse_path->path_elements[level].pe_path = pe->pe_path;
-	(traverse_path->path_length)++;
 
 }
 
@@ -424,6 +406,7 @@ int bplus_tree_shift_right_keys(void *internal_node,
 				tmp_key1 = bplus_tree_get_key(internal_node, j - 1);
 				tmp_key2 = bplus_tree_get_key(internal_node, j);
 				memcpy(tmp_key2, tmp_key1, KEY_SIZE);
+				memset(tmp_key1, 0x0, KEY_SIZE);
 
 			}
 
@@ -551,82 +534,113 @@ void bplus_tree_init_internal_node(void *new_internal_node,
 }
 
 /*
- * This function does following things : 
- * 1. Right shift keys to accommodate key
- * 2. Right shift disk children to accomodate disk child
- * 3. If right position to insert key is found to be 0, disk child will be inserted
- * at 0 position.
- * 4. Else, disk child will be inserted at (i+1) position.
+ * This function figures out the key to insert into parent node.
  */
-void bplus_tree_adjust_internal(void *internal_node,
-				b_plus_tree_key_t *key,
-				disk_child_st *dc)
+void bplus_tree_get_key_to_insert(void *node,
+				  b_plus_tree_key_t *key)
 {
 
-	int i;
-	block_head_st *block_head;
-	int nr_keys, nr_dc;
-
-	block_head = bplus_tree_get_block_head(internal_node);
-	CHECK_RC_ASSERT((block_head->nr_items >= 3), 1);
-	CHECK_RC_ASSERT((block_head->level == BTREE_LEAF_LEVEL), 0);
-
-	/*
-	 * Right shift keys to find right position for key.
-	 */
-	nr_keys = NR_KEYS(block_head->nr_items);
-	nr_dc = nr_keys + 1;
-	i = bplus_tree_shift_right_keys(internal_node, key, nr_keys);
-
-	/*
-	 * Punch the key at position i.
-	 */
-	bplus_tree_punch_key(internal_node, key, i);
-
-	/*
-	 * Now, right shift disk children. Accurate position for disk child is i + 1
-	 */
-	i = bplus_tree_shift_right_dc(internal_node, i + 1, nr_dc);
-
-	/*
-	 * Now, punch disk child at position i.
-	 */
-	bplus_tree_punch_dc(internal_node, dc, i);
+	item_st *first_item;
+	first_item = bplus_tree_get_item(node, 0);
+	key->i_ino = first_item->i_ino;
 
 }
 
 /*
- * This is case #1 : 
- * This is a case where left and right neighbour is not present. That means, it is 
- * a single node b+ tree where root is full and new insertion request has 
- * arrived.
- * In this case, new_leaf_ino should be left/right neighbour of the node. So, 
- * (MAX_ITEMS / 2) items from the node will be flown to new_leaf_ino.
+ * This function inserts key and disk children into internal node.
  */
-int bplus_tree_flow_item_case1(
-			    bplus_tree_balance_st *tb,
-			    bool flow_mode,
-			    void *leaf_node,
-			    void *new_leaf_node,
-			    void *internal_node,
-			    item_st *item,
-			    char *internal_node_path,
-			    char *new_leaf_node_path,
-			    ino_t new_leaf_ino,
-			    ino_t internal_ino)
+void bplus_tree_handle_internal_insert(
+			bplus_tree_balance_st *tb,
+			void *internal_node,
+			char *internal_node_path,
+			bool flow_mode,
+			ino_t new_child_ino,
+			ino_t internal_ino,
+			b_plus_tree_key_t *key,
+			uint16_t nr_keys_to_shift,
+			uint16_t nr_dc_to_shift,
+			uint8_t level)
 {
 
-	int i, rc = EOK;
-	int nr_items_to_flow = (MAX_ITEMS / 2);
-	block_head_st *block_head;
-	item_st *last_item, *first_item;
-	void *node;
-	char *tmp_path, *root;
-	ino_t i_ino;
-	b_plus_tree_key_t key;
-	disk_child_st dc, dc0, dc1;
+	int rc = EOK;
 	bplus_tree_traverse_path_st *traverse_path = tb->tb_path;
-	path_element_st *path_element;
+	disk_child_st dc, dc0, dc1;
+	block_head_st *block_head;
+	char *tmp_path;
+	ino_t i_ino;
+
+	tmp_path = bplus_tree_get_pe_path_path(
+				traverse_path,
+				level);
+	rc = is_path_present(tmp_path, &i_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	dc0.i_ino = i_ino;
+	dc1.i_ino = new_child_ino;
+
+	/*
+	 * Both the disk children should not point to same inode no.
+	 */
+	CHECK_RC_ASSERT((i_ino == new_child_ino), 0);
+
+	/*
+	 * If internal node is empty, then punch in key and 2 disk children
+	 * Also, punch in the newly written internal_node in traverse_path.
+	 *
+	 * Now, root is changed. New root is internal_node here. Previously, root 
+	 * was leaf_node. So, exchage the contents between leaf_node and internal 
+	 * node.
+	 * Adjust internal node's level.
+	 */
+	block_head = bplus_tree_get_block_head(internal_node);
+
+	if (block_head->nr_items == 0)
+	{
+
+		block_head->level = (tb->tb_path->path_length + 1);
+		bplus_tree_init_internal_node(internal_node,
+					      key, &dc0, &dc1);
+		rc = bplus_tree_adjust_root(tb->tb_root_path, internal_ino);
+		INCR_PATH_LENGTH(tb->tb_path);
+		bplus_tree_copy_pe(tb->tb_path,
+				   internal_node,
+				   block_head->level,
+				   0, internal_node_path);
+
+	}
+	else
+	{
+
+		/*
+		 * Copy appropriate disk child as per the flow_mode.
+		 */
+		memcpy(&dc, &dc1, DC_SIZE);
+		bplus_tree_adjust_internal(internal_node,
+					   nr_keys_to_shift,
+					   nr_dc_to_shift,
+					   key, &dc);
+
+	}
+
+	CHECK_RC_ASSERT((block_head->level > BTREE_LEAF_LEVEL), 1);
+
+}
+
+/*
+ * This function does following things :
+ * 1. Flows nr_items_to_flow from leaf_node to new_leaf_node.
+ * 2. Punches the item into correct leaf node.
+ */
+void bplus_tree_adjust_leaf(void *leaf_node,
+			    void *new_leaf_node,
+			    item_st *item)
+{
+
+	int i;
+	block_head_st *block_head;
+	item_st *last_item;
+	void *node;
+	int nr_items_to_flow = (MAX_ITEMS / 2);
 
 	for (i = 0; i < nr_items_to_flow; i++)
 	{
@@ -662,118 +676,413 @@ int bplus_tree_flow_item_case1(
 	i = bplus_tree_shift_right(node, item, block_head->nr_items);
 	bplus_tree_punch_item(node, item, i);
 
-	/*
-	 * Now, we have to keep B+ tree property intact as follow :
-	 * 1. Copy first key into internal node.
-	 */
+}
 
-	node = leaf_node;
-	if (flow_mode == RIGHT)
-	{
-		node = new_leaf_node;
-	}
+/*
+ * This function does following things : 
+ * 1. Right shift keys to accommodate key
+ * 2. Right shift disk children to accomodate disk child
+ * 3. If right position to insert key is found to be 0, disk child will be inserted
+ * at 0 position.
+ * 4. Else, disk child will be inserted at (i+1) position.
+ */
+void bplus_tree_adjust_internal(void *internal_node,
+				uint16_t nr_keys_to_shift,
+				uint16_t nr_dc_to_shift,
+				b_plus_tree_key_t *key,
+				disk_child_st *dc)
+{
 
-	first_item = bplus_tree_get_item(node, 0);
-	key.i_ino = first_item->i_ino;
+	int i;
+	block_head_st *block_head;
+	int nr_keys, nr_dc;
 
-	/*
-	 * 2. Also, disk_children needs to be formed in internal node.
-	 */
-	tmp_path = bplus_tree_get_pe_path_path(
-				traverse_path,
-				BTREE_LEAF_LEVEL);
-	rc = is_path_present(tmp_path, &i_ino);
-	CHECK_RC_ASSERT(rc, EOK);
-
-	if (flow_mode == RIGHT)
-	{
-
-		dc0.i_ino = i_ino;
-		dc1.i_ino = new_leaf_ino;
-
-	}
-	else
-	{
-
-		dc1.i_ino = i_ino;
-		dc0.i_ino = new_leaf_ino;
-
-	}
-
-	/*
-	 * If internal node is empty, then punch in key and 2 disk children
-	 * Also, punch in the newly written internal_node in traverse_path.
-	 *
-	 * Now, root is changed. New root is internal_node here. Previously, root 
-	 * was leaf_node. So, exchage the contents between leaf_node and internal 
-	 * node.
-	 * Adjust internal node's level.
-	 */
 	block_head = bplus_tree_get_block_head(internal_node);
-	if (block_head->nr_items == 0)
-	{
-
-		block_head->level = (BTREE_LEAF_LEVEL + 1);
-		bplus_tree_init_internal_node(internal_node,
-					      &key, &dc0, &dc1);
-		rc = bplus_tree_adjust_root(tb->tb_root_path, internal_ino);
-
-	}
-	else
-	{
-
-		/*
-		 * Copy appropriate disk child as per the flow_mode.
-		 */
-		if (flow_mode == RIGHT)
-		{
-			memcpy(&dc, &dc1, DC_SIZE);
-		}
-		else
-		{
-			memcpy(&dc, &dc0, DC_SIZE);
-		}
-
-		bplus_tree_adjust_internal(internal_node, &key, &dc);
-
-	}
-
-	bplus_tree_copy_pe(tb->tb_path,
-			   internal_node,
-			   (BTREE_LEAF_LEVEL + 1),
-			   0, internal_node_path);
+	CHECK_RC_ASSERT((block_head->nr_items >= 3), 1);
+	CHECK_RC_ASSERT((block_head->level == BTREE_LEAF_LEVEL), 0);
 
 	/*
-	 * 3. Attach the leaf node to tb and flush.
+	 * Right shift keys to find right position for key.
 	 */
+	nr_keys = nr_keys_to_shift;
+	nr_dc = nr_dc_to_shift;
+	i = bplus_tree_shift_right_keys(internal_node, key, nr_keys);
+
+	/*
+	 * Punch the key at position i.
+	 */
+	bplus_tree_punch_key(internal_node, key, i);
+
+	/*
+	 * Now, right shift disk children. Accurate position for disk child is i + 1
+	 */
+	i = bplus_tree_shift_right_dc(internal_node, i + 1, nr_dc);
+
+	/*
+	 * Now, punch disk child at position i.
+	 */
+	bplus_tree_punch_dc(internal_node, dc, i);
+
+}
+
+/*
+ * This function attaches left or right neighbor in a linked list maintained at 
+ * level.
+ */
+void bplus_tree_attach_neighbor(bplus_tree_balance_st *tb,
+				void *new_node,
+				char *new_node_path,
+				bool flow_mode,
+				uint8_t level,
+				int position)
+{
+
+	path_element_st *path_element;
+
 	path_element = (path_element_st *)malloc(PE_SIZE);
 	CHECK_RC_ASSERT((path_element == NULL), 0);
-	bplus_tree_fill_pe(new_leaf_node, new_leaf_node_path, 0, path_element);
+	bplus_tree_fill_pe(new_node, new_node_path, position, path_element);
 
 	if (flow_mode == LEFT)
 	{
 
-		tb->tb_left[BTREE_LEAF_LEVEL] = 
+		tb->tb_left[level] = 
 			sll_insert_node_pos(
-				tb->tb_left[BTREE_LEAF_LEVEL],
+				tb->tb_left[level],
 				path_element,
-				tb->tb_nr_left[BTREE_LEAF_LEVEL],
+				tb->tb_nr_left[level],
 				PE_SIZE);
-		(tb->tb_nr_left[BTREE_LEAF_LEVEL])++;
+		(tb->tb_nr_left[level])++;
 
 	}
 	else
 	{
 
-		tb->tb_right[BTREE_LEAF_LEVEL] = 
+		tb->tb_right[level] = 
 			sll_insert_node_pos(
-				tb->tb_right[BTREE_LEAF_LEVEL],
+				tb->tb_right[level],
 				path_element,
-				tb->tb_nr_right[BTREE_LEAF_LEVEL],
+				tb->tb_nr_right[level],
 				PE_SIZE);
-		(tb->tb_nr_right[BTREE_LEAF_LEVEL])++;
+		(tb->tb_nr_right[level])++;
 
 	}
+
+	free(path_element);
+
+}
+
+/*
+ * This is case #1 : 
+ * This is a case where left and right neighbour is not present. That means, it is 
+ * a single node b+ tree where root is full and new insertion request has 
+ * arrived.
+ * In this case, new_leaf_ino should be left/right neighbour of the node. So, 
+ * (MAX_ITEMS / 2) items from the node will be flown to new_leaf_ino.
+ */
+int bplus_tree_flow_item_case1(
+			    bplus_tree_balance_st *tb,
+			    bool flow_mode,
+			    void *leaf_node,
+			    void *new_leaf_node,
+			    void *internal_node,
+			    item_st *item,
+			    char *internal_node_path,
+			    char *new_leaf_node_path,
+			    ino_t new_leaf_ino,
+			    ino_t internal_ino)
+{
+
+	int rc = EOK;
+	b_plus_tree_key_t key;
+	block_head_st *block_head;
+	uint16_t nr_keys_to_shift, nr_dc_to_shift;
+
+	/*
+	 * First adjust leaf and new_leaf according to item.
+	 */
+	bplus_tree_adjust_leaf(leaf_node, new_leaf_node, item);
+
+	/*
+	 * Now, we have to keep B+ tree property intact as follow :
+	 * 1. Copy first key into internal node.
+	 */
+	bplus_tree_get_key_to_insert(new_leaf_node, &key);
+
+	/*
+	 * 2. Also, disk_children needs to be formed in internal node. As child node
+	 * is at leaf level, shifting happens at the leaf level. NR_ITEMS can be 
+	 * safely used here.
+	 */
+	block_head = bplus_tree_get_block_head(internal_node);
+	nr_keys_to_shift = NR_KEYS(block_head->nr_items);
+	nr_dc_to_shift = nr_keys_to_shift + 1;
+	bplus_tree_handle_internal_insert(tb,
+					  internal_node,
+					  internal_node_path,
+					  flow_mode,
+					  new_leaf_ino,
+					  internal_ino,
+					  &key,
+					  nr_keys_to_shift,
+					  nr_dc_to_shift,
+					  BTREE_LEAF_LEVEL);
+
+	/*
+	 * 3. Attach the leaf node to tb and flush.
+	 */
+	bplus_tree_attach_neighbor(tb,
+				   new_leaf_node,
+				   new_leaf_node_path,
+				   flow_mode,
+				   BTREE_LEAF_LEVEL, 0);
+
+	return rc;
+
+}
+
+/*
+ * This function handles case 2 of item insertion into B+ tree. It does following:
+ * 1. Do normal insertion into leaf node and adjust new leaf node.
+ */
+int bplus_tree_flow_item_case2(
+			    bplus_tree_balance_st *tb,
+			    bool flow_mode,
+			    void *leaf_node,
+			    void *new_leaf_node,
+			    void *internal_node,
+			    item_st *item,
+			    char *internal_node_path,
+			    char *new_leaf_node_path,
+			    ino_t new_leaf_ino,
+			    ino_t internal_ino)
+{
+
+	int i, rc = EOK;
+	b_plus_tree_key_t key, *key1, *key2;
+	ino_t new_internal_ino, root_internal_ino;
+	char *tmp_internal_path, *new_internal_node_path, *root_node_path;
+	block_head_st *block_head, *block_head_new;
+	void *root_internal_node, *new_internal_node, *internal_node_to_insert;
+	uint16_t nr_keys_to_flow, nr_dc_to_flow;
+	uint16_t nr_keys_to_shift, nr_dc_to_shift;
+	uint8_t level;
+	uint16_t src_dc_pos, dst_dc_pos, nr_keys_internal, nr_dc_internal;
+	uint16_t pos_to_reset;
+
+	/*
+	 * First adjust leaf and new_leaf according to item.
+	 */
+	bplus_tree_adjust_leaf(leaf_node, new_leaf_node, item);
+
+	/*
+	 * Now, we have to keep B+ tree property intact as follow :
+	 * 1. Copy first key into internal node.
+	 */
+	bplus_tree_get_key_to_insert(new_leaf_node, &key);
+
+	/*
+	 * 2. As the parent of leaf node is (internal_node) full, we need to 
+	 * allocate 2 new internal nodes. One node for a neighbor and one node for
+	 * new root.
+	 */
+	rc = bplus_tree_get_new_node(&new_internal_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+	new_internal_node = (void *)malloc(NODE_SIZE);
+	CHECK_RC_ASSERT((new_internal_node == NULL), 0);
+
+	new_internal_node_path = (char *)malloc(MAX_PATH);
+	CHECK_RC_ASSERT((new_internal_node_path == NULL), 0);
+	rc = get_path(META_DIR, new_internal_ino, new_internal_node_path);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	rc = bplus_tree_get_new_node(&root_internal_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+	root_internal_node = (void *)malloc(NODE_SIZE);
+	CHECK_RC_ASSERT((root_internal_node == NULL), 0);
+
+	root_node_path = (char *)malloc(MAX_PATH);
+	CHECK_RC_ASSERT((root_node_path == NULL), 0);
+	rc = get_path(META_DIR, root_internal_ino, root_node_path);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	rc = read_file_contents(root_node_path,
+				root_internal_node,
+				READ_FLAGS,
+				READ_MODE,
+				NODE_SIZE);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	rc = read_file_contents(new_internal_node_path,
+				new_internal_node,
+				READ_FLAGS,
+				READ_MODE,
+				NODE_SIZE);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	block_head = bplus_tree_get_block_head(internal_node);
+	nr_keys_internal = NR_KEYS(block_head->nr_items);
+	nr_dc_internal = nr_keys_internal + 1;
+	nr_keys_to_flow = (nr_keys_internal / 2);
+	nr_dc_to_flow = nr_keys_to_flow + 1;
+	
+	/*
+	 * As new_internal_node will be a right neighbor of internal_node, level of
+	 * internal_node should be equal to level of internal_node.
+	 */
+	block_head_new = bplus_tree_get_block_head(new_internal_node);
+	block_head_new->level = block_head->level;
+	CHECK_RC_ASSERT((block_head_new->level == BTREE_LEAF_LEVEL), 0);
+	CHECK_RC_ASSERT(block_head_new->nr_items, 0);
+
+	/*
+	 * Lets flow nr_keys to new internal node.
+	 */
+	for (i = 0; i < nr_keys_to_flow; i++)
+	{
+
+		rc = bplus_tree_flow_key(internal_node,
+					 new_internal_node,
+					 nr_keys_internal,
+					 block_head_new->nr_items);
+		CHECK_RC_ASSERT(rc, EOK);
+		nr_keys_internal--;
+
+	}
+
+	/*
+	 * Lets flow nr_dc disk_child to new internal node.
+	 */
+	src_dc_pos = nr_dc_internal - 1;
+	dst_dc_pos = nr_dc_to_flow - 1;
+	for (i = 0; i < nr_dc_to_flow; i++)
+	{
+
+		rc = bplus_tree_flow_dc(internal_node,
+					new_internal_node,
+					src_dc_pos,
+					dst_dc_pos);
+		CHECK_RC_ASSERT(rc, EOK);
+		src_dc_pos--;
+		dst_dc_pos--;
+
+	}
+
+	/*
+	 * Now, it is time to adjust internal nodes to keep B+ tree property intact.
+	 * There will be minimum 2 adjustments.
+	 * 1. Adjust leaf's parent
+	 * 2. Adjust internal node's parent.
+	 * #2 could be repeated to go upwards. However, this will be done in next
+	 * pass.
+	 */
+
+	/*
+	 * Figure out right parent node of leaf where the key needs to be inserted.
+	 */
+	key1 = bplus_tree_get_key(internal_node, 0);
+	key2 = bplus_tree_get_key(new_internal_node, 0);
+
+	internal_node_to_insert = new_internal_node;
+	tmp_internal_path = new_internal_node_path;
+	pos_to_reset = nr_dc_to_flow - 1;
+	nr_keys_to_shift = nr_keys_to_flow;
+	nr_dc_to_shift = nr_dc_to_flow;
+
+	if ((key.i_ino < key1->i_ino) || (key.i_ino < key2->i_ino))
+	{
+
+		internal_node_to_insert = internal_node;
+		tmp_internal_path = internal_node_path;
+
+		/*
+		 * New key and dc will be inserted into internal_node. So, position
+		 * to reset also should be incremented. Otherwise, rebalancing 
+		 * would result into data corruption.
+		 */
+		pos_to_reset = nr_dc_to_flow;
+		nr_keys_to_shift = nr_keys_to_flow + 1;
+		nr_dc_to_shift = nr_keys_to_shift;
+
+	}
+	
+	/*
+	 * Copy appropriate disk child as per the flow_mode.
+	 */
+	block_head = bplus_tree_get_block_head(new_leaf_node);
+	level = block_head->level;
+	bplus_tree_handle_internal_insert(tb,
+					  internal_node_to_insert,
+					  tmp_internal_path,
+					  flow_mode,
+					  new_leaf_ino,
+					  internal_ino,
+					  &key,
+					  nr_keys_to_shift,
+					  nr_dc_to_shift,
+					  level);
+
+	/*
+	 * Get key to insert into new root node. It should be new internal
+	 * node's first key.
+	 * Now, initialize the root node and adjust root node.
+	 */
+	block_head = bplus_tree_get_block_head(internal_node_to_insert);
+	level = block_head->level;
+
+	/*
+	 * Reset the last key in internal_node at pos_to_reset position.
+	 * Root block is always going to be consistent. So, pass NR_KEYS can be
+	 * used safely here.
+	 */
+	memcpy(&key,
+		bplus_tree_get_key(internal_node, pos_to_reset),
+		KEY_SIZE);
+	bplus_tree_reset_key(internal_node, pos_to_reset);
+
+	block_head = bplus_tree_get_block_head(root_internal_node);
+	nr_keys_to_shift = NR_KEYS(block_head->nr_items);
+	nr_dc_to_shift = nr_keys_to_shift + 1;
+
+	bplus_tree_handle_internal_insert(tb,
+					  root_internal_node,
+					  root_node_path,
+					  flow_mode,
+					  new_internal_ino,
+					  root_internal_ino,
+					  &key,
+					  nr_keys_to_shift,
+					  nr_dc_to_shift,
+					  level);
+
+	/*
+	 * Now, lets add following 3 nodes to respective linked lists : 
+	 * 1. new_leaf_node at level 0.
+	 * 2. internal_node at level 1.
+	 * 3. root_internal_node at level 2.
+	 */
+	bplus_tree_attach_neighbor(tb,
+				   new_leaf_node,
+				   new_leaf_node_path,
+				   flow_mode,
+				   BTREE_LEAF_LEVEL, 0);
+
+	bplus_tree_attach_neighbor(tb,
+				   new_internal_node,
+				   new_internal_node_path,
+				   flow_mode,
+				   (BTREE_LEAF_LEVEL + 1), 0);
+
+	bplus_tree_attach_neighbor(tb,
+				   root_internal_node,
+				   root_node_path,
+				   flow_mode,
+				   (BTREE_LEAF_LEVEL + 2), 0);
+
+	free(root_node_path);
+	free(root_internal_node);
+	free(new_internal_node_path);
+	free(new_internal_node);
 
 	return rc;
 
@@ -809,24 +1118,18 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 	char *internal_node_path, *new_leaf_node_path, *tmp_path;
 	void *leaf_node, *new_leaf_node, *node, *internal_node;
 	void *parent_node;
-	char *internal_node_path_ptr;
 	bplus_tree_traverse_path_st *traverse_path;
 	block_head_st *block_head;
 	ino_t internal_ino;
+	bool free_internal_node = FALSE;
 
 	traverse_path = tb->tb_path;
-
-	internal_node_path = (char *)malloc(MAX_PATH);
-	CHECK_RC_ASSERT((internal_node_path == NULL), 0);
 
 	new_leaf_node_path = (char *)malloc(MAX_PATH);
 	CHECK_RC_ASSERT((new_leaf_node_path == NULL), 0);
 
 	new_leaf_node = (void *)malloc(NODE_SIZE);
 	CHECK_RC_ASSERT((new_leaf_node == NULL), 0);
-
-	internal_node = (void *)malloc(NODE_SIZE);
-	CHECK_RC_ASSERT((internal_node == NULL), 0);
 
 	rc = get_path(META_DIR, new_leaf_ino, new_leaf_node_path);
 	CHECK_RC_ASSERT(rc, EOK);
@@ -850,37 +1153,44 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 		rc = bplus_tree_get_new_node(&internal_ino);
 		CHECK_RC_ASSERT(rc, EOK);
 
+		internal_node_path = (char *)malloc(MAX_PATH);
+		CHECK_RC_ASSERT((internal_node_path == NULL), 0);
+
 		rc = get_path(META_DIR, internal_ino, internal_node_path);
 		CHECK_RC_ASSERT(rc, EOK);
+
+		internal_node = (void *)malloc(NODE_SIZE);
+		CHECK_RC_ASSERT((internal_node == NULL), 0);
+
+		rc = read_file_contents(internal_node_path,
+					internal_node,
+					READ_FLAGS,
+					READ_MODE,
+					NODE_SIZE);
+		CHECK_RC_ASSERT(rc, EOK);
+		free_internal_node = TRUE;
 
 	}
 	else
 	{
 
-		internal_node_path_ptr = bplus_tree_get_pe_path_path(
+		internal_node_path = bplus_tree_get_pe_path_path(
 					traverse_path,
 					(BTREE_LEAF_LEVEL + 1));
-		rc = is_path_present(internal_node_path_ptr, &internal_ino);
+		rc = is_path_present(internal_node_path, &internal_ino);
 		CHECK_RC_ASSERT(rc, EOK);
 
-		strncpy(internal_node_path,
-			internal_node_path_ptr,
-			strlen(internal_node_path_ptr));
-		internal_node_path[strlen(internal_node_path_ptr)] = '\0';
+		internal_node = bplus_tree_get_node_path(traverse_path,
+					(BTREE_LEAF_LEVEL + 1));
 
 	}
-
-	rc = read_file_contents(internal_node_path,
-				internal_node,
-				READ_FLAGS,
-				READ_MODE,
-				NODE_SIZE);
-	CHECK_RC_ASSERT(rc, EOK);
 
 	leaf_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
 
 	/*
-	 * Case 1.
+	 * Case 1 targets following :
+	 * If parent node of the leaf is not full then, following condition
+	 * will be executed.
 	 */
 	block_head = bplus_tree_get_block_head(internal_node);
 	if (block_head->nr_items < (MAX_KEYS + MAX_DC))
@@ -893,15 +1203,117 @@ int bplus_tree_flow_item_handle(bplus_tree_balance_st *tb,
 			new_leaf_ino, internal_ino);
 
 	}
+	/*
+	 * Case 2 targets following :
+	 * If parent node of the leaf is full then, following condition
+	 * will be executed.
+	 */
 	else
 	{
-		CHECK_RC_ASSERT(rc, ENOTSUP);
+
+		rc = bplus_tree_flow_item_case2(tb, flow_mode, leaf_node,
+			new_leaf_node, internal_node, item, 
+			internal_node_path,
+			new_leaf_node_path,
+			new_leaf_ino, internal_ino);
+
 	}
 
-	free(new_leaf_node_path);
-	free(internal_node_path);
+	if (free_internal_node == TRUE)
+	{
+
+		free(internal_node);
+		free(internal_node_path);
+	}
+
 	free(new_leaf_node);
-	free(internal_node);
+	free(new_leaf_node_path);
+	return rc;
+
+}
+
+/*
+ * This function is used for flowing a key from one node to another.
+ * This is only used for internal node.
+ */
+int bplus_tree_flow_key(void *src, void *dest, int nr_keys_src, int nr_keys_dest)
+{
+
+	int rc = EOK;
+	block_head_st *block_head_src, *block_head_dest;
+	b_plus_tree_key_t *src_key, *dest_key;
+	int i;
+
+	CHECK_RC_ASSERT((src == NULL), 0);
+	CHECK_RC_ASSERT((dest == NULL), 0);
+
+	block_head_src = bplus_tree_get_block_head(src);
+	block_head_dest = bplus_tree_get_block_head(dest);
+
+	/*
+	 * Take last key in src buffer.
+	 * Shift dest keys right one by one.
+	 * Take dest_key at empty location.
+	 */
+	src_key = bplus_tree_get_key(src, (nr_keys_src - 1));
+	i = bplus_tree_shift_right_keys(dest, src_key, nr_keys_dest);
+	dest_key = bplus_tree_get_key(dest, i);
+	CHECK_RC_ASSERT(dest_key->i_ino, 0);
+	memcpy(dest_key, src_key, KEY_SIZE);
+
+	/*
+	 * Adjust counters.
+	 */
+	block_head_dest->nr_items += 1;
+	block_head_src->nr_items -= 1;
+	block_head_dest->free_space -= KEY_SIZE;
+	block_head_src->free_space += KEY_SIZE;
+
+	return rc;
+
+}
+
+/*
+ * This function is used for flowing disk child from one node to another.
+ * This is used for internal node.
+ */
+int bplus_tree_flow_dc(
+			void *src,
+			void *dest,
+			uint16_t src_pos_dc,
+			uint16_t dst_pos_dc)
+{
+
+	int rc = EOK;
+	block_head_st *block_head_src, *block_head_dest;
+	disk_child_st *src_dc, *dest_dc;
+
+	CHECK_RC_ASSERT((src == NULL), 0);
+	CHECK_RC_ASSERT((dest == NULL), 0);
+
+	block_head_src = bplus_tree_get_block_head(src);
+	block_head_dest = bplus_tree_get_block_head(dest);
+
+	/*
+	 * Take src_dc at position in src buffer.
+	 * Take dest_dc at position in dest buffer.
+	 * Do a flow
+	 * Reset the src_dc as 0. 
+	 */
+	src_dc = bplus_tree_get_dc(src, src_pos_dc);
+	dest_dc = bplus_tree_get_dc(dest, dst_pos_dc);
+	CHECK_RC_ASSERT(dest_dc->i_ino, 0);
+	memcpy(dest_dc, src_dc, DC_SIZE);
+	memset(src_dc, 0, DC_SIZE);
+
+	/*
+	 * Adjust counters.
+	 */
+	block_head_dest->nr_items += 1;
+	block_head_src->nr_items -= 1;
+	block_head_dest->free_space -= DC_SIZE;
+	block_head_src->free_space += DC_SIZE;
+
 	return rc;
 
 }
@@ -933,6 +1345,7 @@ int bplus_tree_flow_item(void *src, void *dest)
 	i = bplus_tree_shift_right(dest, src_item, block_head_dest->nr_items);
 	dest_item = bplus_tree_get_item(dest, i);
 	memcpy(dest_item, src_item, ITEM_SIZE);
+	memset(src_item, 0, ITEM_SIZE);
 
 	/*
 	 * Adjust counters.
@@ -1361,6 +1774,31 @@ bool bplus_tree_find_flow_dir(int pe_position)
 	}
 
 	return flow;	
+
+}
+
+/*
+ * This function zeroes out a key at a position. 
+ */
+int bplus_tree_reset_key(void *internal_node, int position)
+{
+
+	int rc = EOK;
+	block_head_st *block_head;
+	b_plus_tree_key_t *key;
+
+	CHECK_RC_ASSERT((internal_node == NULL), 0);
+
+	block_head = bplus_tree_get_block_head(internal_node);
+	CHECK_RC_ASSERT((block_head->level == BTREE_LEAF_LEVEL), 0);
+
+	key = bplus_tree_get_key(internal_node, position);
+	memset(key, 0, KEY_SIZE);
+
+	(block_head->nr_items)--;
+	block_head->free_space += KEY_SIZE;
+
+	return rc;
 
 }
 

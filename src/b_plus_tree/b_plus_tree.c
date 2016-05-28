@@ -95,6 +95,7 @@ int bplus_tree_init(char *meta_dir, char *root_path, bool force_init)
 	rc = bplus_tree_write_root_path(root_path, i_ino);
 	CHECK_RC_ASSERT(rc, EOK);
 
+	free(path);
 	return rc;
 
 }
@@ -298,7 +299,7 @@ int bplus_tree_insert(char *root_path, char *path)
 
 	}
 
-	item = (item_st *)malloc(KEY_SIZE);
+	item = (item_st *)malloc(ITEM_SIZE);
 	CHECK_RC_ASSERT((item == NULL), 0);
 	bplus_tree_form_item(key, item);
 
@@ -306,6 +307,7 @@ int bplus_tree_insert(char *root_path, char *path)
 	if (rc != EOK)
 	{
 
+		free(item);
 		free(key);
 		bplus_tree_free_traverse_path(traverse_path);
 		return rc;
@@ -316,12 +318,14 @@ int bplus_tree_insert(char *root_path, char *path)
 	if (rc != EOK)
 	{
 
+		free(item);
 		free(key);
 		bplus_tree_free_traverse_path(traverse_path);
 		return rc;
 
 	}
 
+	free(item);
 	free(key);
 	bplus_tree_free_traverse_path(traverse_path);
 	return rc;
@@ -397,6 +401,7 @@ int bplus_tree_search_key(char *root_path,
 	rc = get_path(META_DIR, root_ino, next_path);
 	CHECK_RC_ASSERT(rc, EOK);
 	path = next_path;
+	traverse_path->path_length = INVALID_PATH_LENGTH;
 
 	while (1)
 	{
@@ -425,6 +430,7 @@ int bplus_tree_search_key(char *root_path,
 		rc = bin_search(buf, key, (block_head->nr_items - 1),
 				&position, is_leaf);
 		bplus_tree_copy_pe(traverse_path, buf, level, position, path);
+		INCR_PATH_LENGTH(traverse_path);
 
 		/*
 		 * If we reach at the leaf block, break.

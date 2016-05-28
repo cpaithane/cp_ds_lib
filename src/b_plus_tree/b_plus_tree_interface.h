@@ -26,10 +26,18 @@
 #define MAX_ITEMS ((NODE_SIZE - BLOCK_HEAD_SIZE) / ITEM_SIZE)
 #define MAX_KEYS ((NODE_SIZE - BLOCK_HEAD_SIZE - DC_SIZE)) / (DC_SIZE + KEY_SIZE)
 #define MAX_DC (MAX_KEYS + 1)
+
+/*
+ * NR_KEYS : This macro should be used in code path when internal node is consistent
+ * That means, nr_keys = nr_dc - 1;
+ */
 #define NR_KEYS(nr_items) ( (nr_items - 1) / 2 )
+#define FIRST_KEY_LOC 0
 
 #define INVALID_PATH_LENGTH -1
 #define PATH_POSITION_ROOT 1
+
+#define INCR_PATH_LENGTH(traverse_path) ((traverse_path->path_length)++)
 
 int bplus_tree_init(char *meta_dir, char *root_path, bool force_init);
 int bplus_tree_write_root_path(char *root_path, ino_t root_ino);
@@ -115,7 +123,15 @@ int bplus_tree_get_pos_path(bplus_tree_traverse_path_st *traverse_path,
 char *bplus_tree_get_pe_path_path(bplus_tree_traverse_path_st *traverse_path, 
                             uint8_t level);
 
+int bplus_tree_flow_key(void *src, void *dest, int nr_keys_src, int nr_keys_dest);
+int bplus_tree_flow_dc(
+			void *src,
+			void *dest,
+			uint16_t src_pos_dc,
+			uint16_t dst_pos_dc);
+
 int bplus_tree_flow_item(void *src, void *dest);
+
 int bplus_tree_rebalance(char *root_path,
 			 bplus_tree_traverse_path_st *traverse_path,
                          item_st *item,
@@ -164,6 +180,37 @@ void bplus_tree_init_internal_node(void *new_internal_node,
                                    disk_child_st *dc1);
 
 void bplus_tree_adjust_internal(void *internal_node,
+                                uint16_t nr_keys_to_shift,
+                                uint16_t nr_dc_to_shift,
                                 b_plus_tree_key_t *key,
                                 disk_child_st *dc);
 
+void bplus_tree_handle_internal_insert(
+                         bplus_tree_balance_st *tb,
+                         void *internal_node,
+                         char *internal_node_path,
+                         bool flow_mode,
+                         ino_t new_child_ino,
+                         ino_t internal_ino,
+                         b_plus_tree_key_t *key,
+                         uint16_t nr_keys_to_shift,
+                         uint16_t nr_dc_to_shift,
+                         uint8_t level);
+
+void bplus_tree_adjust_leaf(void *leaf_node,
+                            void *new_leaf_node,
+                            item_st *item);
+
+int bplus_tree_reset_key(void *internal_node, int position);
+
+void bplus_tree_get_key_to_insert(void *node,
+                                  b_plus_tree_key_t *key);
+
+void bplus_tree_attach_neighbor(bplus_tree_balance_st *tb,
+                                void *new_node,
+                                char *new_node_path,
+                                bool flow_mode,
+                                uint8_t level,
+                                int position);
+
+         
