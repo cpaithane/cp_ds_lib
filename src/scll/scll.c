@@ -300,17 +300,24 @@ int scll_remove_scll(scll_st *head)
 {
 
 	int rc = EOK;
-	scll_st *tmp = head;
 
-	while ((tmp) && (tmp->scll_next != head))
+	while ((head) && (head->scll_next != head))
+	{
+		head = scll_remove_node_0(head);
+	}
+
+	/*
+	 * Head here will remain allocated. So, deallocate it.
+	 */
+	if (head)
 	{
 
-		head = scll_remove_node_0(head);
-		tmp = tmp->scll_next;
+		scll_dealloc_node(head);
+		head = NULL;
 
 	}
 
-	CHECK_RC_ASSERT((head == NULL), 0);	
+	CHECK_RC_ASSERT(head, NULL);	
 	return rc;
 
 }
