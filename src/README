@@ -28,3 +28,35 @@ str[strlen(str)] = '\0';
 
 ===============
 
+Valgrind error symptom : invalid read of 4 bytes.
+
+1. This error was coming out of removal of singly linked list. The list was 
+traversed as follow : 
+
+	tmp = head;
+        while (tmp)
+        {
+
+                i++;
+                head = sll_remove_node_0(head);
+		tmp = tmp->sll_next;
+
+        }
+
+2. As part tmp = tmp->sll_next; code is accessing recently freed memory. The memory
+is freed by sll_remove_node_0(). 
+
+3. Fixed as follow : 
+
+        while (head)
+        {
+
+                i++;
+                head = sll_remove_node_0(head);
+
+        }
+
+4. Lesson learned : Always look at pointer after freeing of memory.
+
+==============
+

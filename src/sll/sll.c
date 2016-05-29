@@ -290,17 +290,14 @@ int sll_remove_sll(sll_st *head)
 
 	int i;
 	int rc = EOK;
-	sll_st *tmp;
 
 	i = 0;
-	tmp = head;
 
-	while (tmp)
+	while (head)
 	{
 
-		head = sll_remove_node_0(head);
-		tmp = tmp->sll_next;
 		i++;
+		head = sll_remove_node_0(head);
 
 	}
 
