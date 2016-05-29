@@ -339,6 +339,18 @@ int bplus_tree_free_traverse_path(bplus_tree_traverse_path_st *traverse_path)
 }
 
 /*
+ * This function frees up path_element and members inside it.
+ */
+int bplus_tree_free_pe(path_element_st *path_element)
+{
+
+	free(path_element->pe_path);
+	free(path_element->pe_node);
+	free(path_element);
+
+}
+
+/*
  * This function left shifts one item from leaf node. Returns the slot where to 
  * insert/delete new item
  */

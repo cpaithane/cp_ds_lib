@@ -101,6 +101,7 @@ int bplus_tree_flush_siblings(sll_st *tb_left);
 int bplus_tree_flush_tb(bplus_tree_balance_st *tb);
 int bplus_tree_flush_traverse_path(bplus_tree_traverse_path_st *traverse_path);
 int bplus_tree_free_traverse_path(bplus_tree_traverse_path_st *traverse_path);
+int bplus_tree_free_pe(path_element_st *path_element);
 
 int bplus_tree_shift_right_keys(void *internal_node,
                                 b_plus_tree_key_t *key,
