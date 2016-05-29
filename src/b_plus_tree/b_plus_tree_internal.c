@@ -33,7 +33,10 @@ void bplus_tree_fill_pe(void *buf,
 	node = (void *)malloc(NODE_SIZE);
 	CHECK_RC_ASSERT((node == NULL), 0);
 
-	len = strlen(path);
+	/*
+	 * strlen returns output excluding '\0'. Valgrind complains.
+	 */
+	len = strlen(path) + 1;
 	pe_path = (char *)malloc(len);
 	CHECK_RC_ASSERT((pe_path == NULL), 0);
 
@@ -42,8 +45,8 @@ void bplus_tree_fill_pe(void *buf,
 
 	memset(pe_path, 0, len);
 	memcpy(pe_path, path, len);
-	pe_path[len] = '\0';
-	CHECK_RC_ASSERT(len, strlen(pe_path));
+	pe_path[len - 1] = '\0';
+	CHECK_RC_ASSERT((len - 1), strlen(pe_path));
 
 	pe->pe_node = node;
 	pe->pe_path = pe_path;

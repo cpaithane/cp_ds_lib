@@ -7,4 +7,24 @@ This code contains implementation details of various data structures such as :
 5. Singly Circular List
 6. Binary Search Tree
 7. AVL tree
+8. Heap
+9. Graph
+10. B+ tree
+11. Trie
+
+===============
+
+What I learned from my Valgrind tryouts : 
+
+===============
+
+Valgrind error symptom : invalid write of 1 byte.
+
+1. strlen returns output excluding '/0' character. So, if malloc or character array
+is used to allocating memory, allocate strlen(str) + 1 number of bytes.
+
+2. Also, string should terminate with '/0' character. Something like as follow :
+str[strlen(str)] = '\0';
+
+===============
 
