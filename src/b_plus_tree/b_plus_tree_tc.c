@@ -70,10 +70,6 @@ int bplus_tc_insert_keys(bool is_ascending)
 	file_name = (char *)malloc(MAX_PATH);
 	CHECK_RC_ASSERT((file_name == NULL), 0);
 	
-	traverse_path = (bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
-	CHECK_RC_ASSERT((traverse_path == NULL), 0);
-	memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
-
 	key = (b_plus_tree_key_t *)malloc(KEY_SIZE);
 	CHECK_RC_ASSERT((key == NULL), 0);
 	memset(key, 0, KEY_SIZE);
@@ -85,14 +81,20 @@ int bplus_tc_insert_keys(bool is_ascending)
 		for (i = 0; i < MAX_INPUT_ITEMS; i++)
 		{
 
-			memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
 			get_file_name(file_name, i);
 			rc = bplus_tree_insert(ROOT, file_name);
 			CHECK_RC_ASSERT(rc, EOK);
 			rc = bplus_form_key(file_name, key);
 			CHECK_RC_ASSERT(rc, EOK);
+
+			traverse_path =
+			(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
+			CHECK_RC_ASSERT((traverse_path == NULL), 0);
+			memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
+
 			rc = bplus_tree_search_key(ROOT, key, traverse_path);
 			CHECK_RC_ASSERT(rc, EEXIST);
+			bplus_tree_free_traverse_path(traverse_path);
 
 		}
 	}
@@ -102,14 +104,19 @@ int bplus_tc_insert_keys(bool is_ascending)
 		for (i = MAX_INPUT_ITEMS; i >= 0; i--)
 		{
 
-			memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
 			get_file_name(file_name, i);
 			rc = bplus_tree_insert(ROOT, file_name);
 			CHECK_RC_ASSERT(rc, EOK);
 			rc = bplus_form_key(file_name, key);
 			CHECK_RC_ASSERT(rc, EOK);
+
+			traverse_path =
+			(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
+			CHECK_RC_ASSERT((traverse_path == NULL), 0);
+			memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
 			rc = bplus_tree_search_key(ROOT, key, traverse_path);
 			CHECK_RC_ASSERT(rc, EEXIST);
+			bplus_tree_free_traverse_path(traverse_path);
 
 		}
 
@@ -117,7 +124,6 @@ int bplus_tc_insert_keys(bool is_ascending)
 
 	free(key);
 	free(file_name);
-	bplus_tree_free_traverse_path(traverse_path);
 	return rc;
 
 }
@@ -140,10 +146,6 @@ int bplus_tc_search_keys()
 	file_name = (char *)malloc(MAX_PATH);
 	CHECK_RC_ASSERT((file_name == NULL), 0);
 
-	traverse_path = (bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
-	CHECK_RC_ASSERT((traverse_path == NULL), 0);
-	memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
-
 	key = (b_plus_tree_key_t *)malloc(KEY_SIZE);
 	CHECK_RC_ASSERT((key == NULL), 0);
 	memset(key, 0, KEY_SIZE);
@@ -152,7 +154,6 @@ int bplus_tc_search_keys()
 	for (i = 0; i < MAX_INPUT_ITEMS; i++)
 	{
 	
-		memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
 		get_file_name(file_name, i);
 		rc = is_path_present(file_name, &i_ino);
 		CHECK_RC_ASSERT(rc, EOK);
@@ -160,6 +161,10 @@ int bplus_tc_search_keys()
 		rc = bplus_form_key(file_name, key);
 		CHECK_RC_ASSERT(rc, EOK);
 
+		traverse_path =
+		(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
+		CHECK_RC_ASSERT((traverse_path == NULL), 0);
+		memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
 		rc = bplus_tree_search_key(ROOT, key, traverse_path);
 		CHECK_RC_ASSERT(rc, EEXIST);
 
@@ -175,12 +180,12 @@ int bplus_tc_search_keys()
 		    file_name,
 		    (uint32_t)item->i_ino);
 
+		bplus_tree_free_traverse_path(traverse_path);
+
 	}
 
 	free(file_name);
 	free(key);
-	bplus_tree_free_traverse_path(traverse_path);
-	
 	return rc;
 
 }

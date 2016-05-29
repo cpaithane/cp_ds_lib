@@ -74,6 +74,8 @@ void bplus_tree_copy_pe(bplus_tree_traverse_path_st *traverse_path,
 	traverse_path->path_elements[level].pe_position = pe->pe_position;
 	traverse_path->path_elements[level].pe_path = pe->pe_path;
 
+	free(pe);
+
 }
 
 /*
@@ -234,6 +236,11 @@ int bplus_tree_flush_siblings(sll_st *tb_left)
 					 node, NODE_SIZE);
 		CHECK_RC_ASSERT(rc, EOK);
 
+		/*
+		 * fill_pe allocates node and path. Lets deallocate them.
+		 */
+		free(node);
+		free(path);
 		tb_left = tb_left->sll_next;
 
 	}
@@ -331,6 +338,7 @@ int bplus_tree_free_traverse_path(bplus_tree_traverse_path_st *traverse_path)
 
 		free(path);
 		free(node);
+
 	}
 
 	free(traverse_path);
@@ -1678,6 +1686,7 @@ bplus_tree_balance_st *bplus_tree_init_tb(
 
 	free(path);
 	free(neighbor);
+	free(path_element);
 	return tb;
 
 }
