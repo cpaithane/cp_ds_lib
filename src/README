@@ -71,4 +71,11 @@ Proceed further.
 
 ==============
 
+Valgrind error symptom : Conditional jump or move depends on uninitialised value(s)
+
+head of linked list was uninitialized and it was checked for some decision making.
+
+Initialize the pointer to NULL.
+
+==============
 

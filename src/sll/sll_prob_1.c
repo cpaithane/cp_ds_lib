@@ -63,7 +63,7 @@ int ssl_prob_1()
 {
 
 	int i, rc = EOK;
-	sll_st *head;
+	sll_st *head = NULL;
 
 	for (i = 0; i < 10; i++)
 	{
