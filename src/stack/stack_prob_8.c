@@ -57,7 +57,17 @@ int stack_prob_8()
 	}
 
 	printf("\n");
+
+	/*
+	 * Pop till stack is empty.
+	 */
+	while (stack_is_stack_empty(st) == 0)
+	{
+		stack_pop(st, &rc);
+	}
+
 	rc = stack_dealloc_stack(st);
+	CHECK_RC_ASSERT(rc, EOK);
 	return rc;
 
 }

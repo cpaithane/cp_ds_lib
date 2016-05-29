@@ -71,6 +71,17 @@ int stack_prob_12()
 	st = stack_alloc_stack(sizeof(int));
 	rc = stack_prob_12_main(st, input);
 
+	/*
+	 * Pop till stack is empty.
+	 */
+	while (stack_is_stack_empty(st) == 0)
+	{
+		stack_pop(st, &rc);
+	}
+
+	rc = stack_dealloc_stack(st);
+	CHECK_RC_ASSERT(rc, EOK);
+
 	return rc;
 
 }

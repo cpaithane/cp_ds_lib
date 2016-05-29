@@ -60,3 +60,15 @@ is freed by sll_remove_node_0().
 
 ==============
 
+Valgrind error symptom : Source and destination overlap in 
+memcpy(0x4207278, 0x4207278, 4)
+
+How to fix : 
+
+node = malloc(len);
+memcpy(node, temp, len);
+Proceed further.
+
+==============
+
+

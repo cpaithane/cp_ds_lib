@@ -18,7 +18,12 @@ void stack_prob_6_insert_at_bottom(stack_st *st, void *node, size_t len)
 
 	if (stack_is_stack_empty(st))
 	{
-		stack_push(st, node, len);
+
+		temp = malloc(len);
+		memcpy(temp, node, len);
+		stack_push(st, temp, len);
+		free(temp);
+
 	}
 	else
 	{

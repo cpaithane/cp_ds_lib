@@ -85,7 +85,7 @@ int stack_prob_5()
 
 	}
 	printf("\n");
-
+	stack_dealloc_stack(st);
 	return rc;
 
 }

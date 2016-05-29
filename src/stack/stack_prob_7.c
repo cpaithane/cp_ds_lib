@@ -22,7 +22,12 @@ void stack_prob_7_sorted_insert(stack_st *st,
 	if (stack_is_stack_empty(st) || 
 	   (compare(node, stack_get_peek(st)) == FIRST_GREATER))
 	{
-		stack_push(st, node, len);
+
+		temp = malloc(len);
+		memcpy(temp, node, len);
+		stack_push(st, temp, len);
+		free(temp);
+
 	}
 	else
 	{
