@@ -79,3 +79,9 @@ Initialize the pointer to NULL.
 
 ==============
 
+Valgrind error symptom : memcpy : Source and destination addresses are overlapping.
+
+Check and fix them accordingly.
+
+==============
+

@@ -337,9 +337,19 @@ int heap_remove_max(heap_st *heap,
 	int rc = EOK;
 
 	memcpy(data, heap->heap_data[HEAP_ROOT_LOC], len);
-	memcpy(heap->heap_data[HEAP_ROOT_LOC],
-		heap->heap_data[heap->heap_size - 1],
-		len);
+
+	/*
+	 * Check for overlap.
+	 */
+	if (HEAP_ROOT_LOC != (heap->heap_size - 1))
+	{
+
+		memcpy(heap->heap_data[HEAP_ROOT_LOC],
+			heap->heap_data[heap->heap_size - 1],
+			len);
+
+	}
+
 	(heap->heap_size)--;
 
 	rc = heap_max_heapify(heap, 0, compare);
@@ -443,11 +453,20 @@ int heap_remove_min(heap_st *heap,
 	int rc = EOK;
 
 	memcpy(data, heap->heap_data[HEAP_ROOT_LOC], len);
-	memcpy(heap->heap_data[HEAP_ROOT_LOC],
-		heap->heap_data[heap->heap_size - 1],
-		len);
-	(heap->heap_size)--;
 
+	/*
+	 * Check for overlap.
+	 */
+	if (HEAP_ROOT_LOC != (heap->heap_size - 1))
+	{
+
+		memcpy(heap->heap_data[HEAP_ROOT_LOC],
+			heap->heap_data[heap->heap_size - 1],
+			len);
+
+	}
+
+	(heap->heap_size)--;
 	rc = heap_min_heapify(heap, 0, compare);
 
 	return rc;
