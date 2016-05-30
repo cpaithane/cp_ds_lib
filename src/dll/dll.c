@@ -289,20 +289,14 @@ int dll_traverse_list(dll_st *head,
 int dll_remove_dll(dll_st *head)
 {
 
-	dll_st *tmp = head;
 	int i = 0;
 	int rc = EOK;
 
-	while (tmp)
+	while (head)
 	{
 	
 		head = dll_remove_node_pos(head, 0);
 		i++;
-		if (tmp)
-		{
-			tmp = tmp->dll_next;
-		}
-		tmp = head;
 
 	}
 

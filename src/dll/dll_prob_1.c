@@ -58,6 +58,7 @@ int dll_prob_1()
 
 	int rc = EOK;
 	bst_st *root = NULL;
+	bst_st *root_tmp = NULL;
 
 	int i;
 	int data[7] = {100, 10, 200, 20, 400, 30, 600};
@@ -70,9 +71,10 @@ int dll_prob_1()
 
 	}
 
-	root = dll_prob_1_tree_to_list(bst_root);
+	root_tmp = dll_prob_1_tree_to_list(bst_root);
 
 	printf("Printing in straight = \n");
+	root = root_tmp;
 	while (root)
 	{
 
@@ -83,6 +85,7 @@ int dll_prob_1()
 	printf("\n");
 
 	printf("Printing in reverse = \n");
+	root = root_tmp;
 	while (root)
 	{
 
