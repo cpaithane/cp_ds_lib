@@ -586,6 +586,7 @@ int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
 	int i, position = 0;
 	block_head_st *block_head = NULL;
 	item_st *tmp_item1 = NULL;
+	char *root_path = NULL;
 
 	leaf_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
 	CHECK_RC_ASSERT((leaf_node == NULL), 0);
@@ -594,6 +595,22 @@ int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
 	CHECK_RC_ASSERT((block_head == NULL), 0);
 
 	position = bplus_tree_get_pos_path(traverse_path, BTREE_LEAF_LEVEL);
+
+	/*
+	 * Condition for rebalancing after deletion is that leaf node should have 
+	 * less than MAX_ITEMS / 2 items. Otherwise, it would be simple delete op.
+	 */
+	if (block_head->nr_items < (MAX_ITEMS / 2))
+	{
+
+		root_path = NULL;
+		tmp_item1 = bplus_tree_get_item(leaf_node, position);
+		rc = bplus_tree_rebalance(root_path,
+					  traverse_path,
+					  tmp_item1, BPLUS_DELETE);
+		return rc;
+
+	}
 
 	i = bplus_tree_shift_left(leaf_node, position, block_head->nr_items);
 

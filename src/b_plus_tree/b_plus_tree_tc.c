@@ -207,10 +207,6 @@ int bplus_tc_delete_keys()
 	file_name = (char *)malloc(MAX_PATH);
 	CHECK_RC_ASSERT((file_name == NULL), 0);
 
-	traverse_path = (bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
-	CHECK_RC_ASSERT((traverse_path == NULL), 0);
-	memset(traverse_path, 0, sizeof(bplus_tree_traverse_path_st));
-
 	key = (b_plus_tree_key_t *)malloc(KEY_SIZE);
 	CHECK_RC_ASSERT((key == NULL), 0);
 	memset(key, 0, KEY_SIZE);
@@ -218,8 +214,9 @@ int bplus_tc_delete_keys()
 	/*
 	 * Delete the inode no. of file into b+ tree.
 	 * Then, lookup inside b+ tree for the key just deleted.
+	 * Currently, testing only for single key deletion.
 	 */
-	for (i = 0; i < MAX_INPUT_ITEMS; i++)
+	for (i = 0; i < 1; i++)
 	{
 
 		get_file_name(file_name, i);
@@ -229,38 +226,24 @@ int bplus_tc_delete_keys()
 		rc = bplus_form_key(file_name, key);
 		CHECK_RC_ASSERT(rc, EOK);
 
+		traverse_path =
+			(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
+		CHECK_RC_ASSERT((traverse_path == NULL), 0);
+		memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
+
 		rc = bplus_tree_search_key(ROOT, key, traverse_path);
 		CHECK_RC_ASSERT(rc, ENOENT);
+		bplus_tree_free_traverse_path(traverse_path);
 
 		printf("Deleted filename = %s, key = %u\n",
 		    file_name,
 		    (uint32_t)key->i_ino);
-		
-	}
-
-	/*
-	 * Lets get the b+ tree leaf block and compare it's contents with 0.
-	 */
-	rc = bplus_tree_search_key(ROOT, key, traverse_path);
-	CHECK_RC_ASSERT(rc, ENOENT);
-
-	for (i = 0; i < MAX_INPUT_ITEMS; i++)
-	{
-
-		leaf_node = bplus_tree_get_node_path(traverse_path,
-						    BTREE_LEAF_LEVEL);
-		item = bplus_tree_get_item(leaf_node, i);
-		CHECK_RC_ASSERT(item->i_ino, 0);
 
 	}
 
-	block_head = bplus_tree_get_block_head(leaf_node);
-	CHECK_RC_ASSERT(block_head->nr_items, 0);
-	CHECK_RC_ASSERT(block_head->free_space, (NODE_SIZE - BLOCK_HEAD_SIZE));
-
+	rc = EOK;
 	free(file_name);
 	free(key);
-	bplus_tree_free_traverse_path(traverse_path);
 	
 	return rc;
 
@@ -290,12 +273,14 @@ int bplus_test_case1(bool is_ascending)
 	 */
 	bplus_tc_search_keys();
 
-	rc = bplus_tree_deinit(META_DIR);
+	/*
+	 * Now, delete keys from B+ tree.
+	 */
+	rc = bplus_tc_delete_keys();
 	CHECK_RC_ASSERT(rc, EOK);
 
-#ifdef DELETE_SUPPORT
-	bplus_tc_delete_keys();
-#endif
+	rc = bplus_tree_deinit(META_DIR);
+	CHECK_RC_ASSERT(rc, EOK);
 
 	return rc;
 

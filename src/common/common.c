@@ -260,3 +260,21 @@ int write_file_contents(char *path,
 
 }
 
+/*
+ * This function deletes file pointed by path.
+ */
+int delete_file(char *path)
+{
+
+	int rc = EOK;
+
+	rc = remove(path);
+	if (rc != 0)
+	{
+		rc = errno;
+	}
+
+	return rc;
+
+}
+

@@ -81,6 +81,8 @@ int write_file_contents(char *path,
 			void *buf,
 			size_t len);
 
+int delete_file(char *path);
+
 int get_path(char *parent_dir, ino_t i_ino, char *path);
 
 

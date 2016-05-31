@@ -289,6 +289,7 @@ int bplus_tree_flush_traverse_path(bplus_tree_traverse_path_st *traverse_path)
 	int i;
 	char *path;
 	void *node;
+	block_head_st *block_head;
 	int rc = EOK;
 
 	for (i= 0; i < BPLUS_MAX_HEIGHT; i++)
@@ -303,9 +304,24 @@ int bplus_tree_flush_traverse_path(bplus_tree_traverse_path_st *traverse_path)
 		node = traverse_path->path_elements[i].pe_node;
 		rc = write_file_contents(path, WRITE_FLAGS, WRITE_MODE,
 					 node, NODE_SIZE);
+
 		if (rc != EOK)
 		{
 			break;
+		}
+
+		/*
+		 * If deletion of items result into node with zero items, delete
+		 * the node in question.
+		 */
+		block_head = bplus_tree_get_block_head(node);
+		if (block_head->nr_items == 0)
+		{
+
+			CHECK_RC_ASSERT(block_head->free_space, BLOCK_HEAD_SIZE);
+			rc = delete_file(path);
+			CHECK_RC_ASSERT(rc, EOK);
+
 		}
 
 	}
