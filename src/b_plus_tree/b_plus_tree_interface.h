@@ -214,4 +214,5 @@ void bplus_tree_attach_neighbor(bplus_tree_balance_st *tb,
                                 uint8_t level,
                                 int position);
 
-         
+void bplus_tree_delete_item_pos0(bplus_tree_traverse_path_st *traverse_path);
+

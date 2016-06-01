@@ -1842,3 +1842,52 @@ int bplus_tree_reset_key(void *internal_node, int position)
 
 }
 
+/*
+ * This function handles a special case with following specs: 
+ * 1. Position at which item to be deleted in leaf node is 0.
+ */
+void bplus_tree_delete_item_pos0(bplus_tree_traverse_path_st *traverse_path)
+{
+
+	item_st *tmp_item1 = NULL;
+	b_plus_tree_key_t key;
+	b_plus_tree_key_t *par_key = NULL;
+	void *leaf_node, *parent_node;
+	int par_position = 0;
+	int position = 0;
+
+	leaf_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
+
+	tmp_item1 = bplus_tree_get_item(leaf_node, 0);
+	key.i_ino = tmp_item1->i_ino;
+
+	parent_node = bplus_tree_get_parent_node_path(
+			traverse_path, BTREE_LEAF_LEVEL);
+
+	if (parent_node != NULL)
+	{
+
+		position = bplus_tree_get_pos_path(
+			traverse_path, (BTREE_LEAF_LEVEL));
+		CHECK_RC_ASSERT(position, 0);
+
+		par_position = bplus_tree_get_pos_path(
+			traverse_path, (BTREE_LEAF_LEVEL + 1));
+
+		/*
+		 * For parent position to be non-zero, key in parent is equal to
+		 * key of item at first location in the leaf.
+		 */
+		if (par_position != 0)
+		{
+
+			par_key = bplus_tree_get_key(parent_node, par_position);
+			CHECK_RC_ASSERT((par_key == NULL), 0);
+			memcpy(par_key, &key, KEY_SIZE);
+
+		}
+
+	}
+
+}
+

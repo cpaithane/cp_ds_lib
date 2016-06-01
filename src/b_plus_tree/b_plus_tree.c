@@ -612,6 +612,10 @@ int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
 
 	}
 
+	/*
+	 * This means, there are sufficient items in leaf node. We could have two
+	 * different scenarios as per position.
+	 */
 	i = bplus_tree_shift_left(leaf_node, position, block_head->nr_items);
 
 	/*
@@ -619,6 +623,14 @@ int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
 	 */
 	tmp_item1 = bplus_tree_get_item(leaf_node, i);
 	memset(tmp_item1, 0, ITEM_SIZE);
+
+	/*
+	 * If item deleted was at position 0, copy key into parent.
+	 */
+	if (position == 0)
+	{
+		bplus_tree_delete_item_pos0(traverse_path);
+	}
 
 	/*
 	 * Adjust counters.
