@@ -46,7 +46,8 @@ int bplus_tree_get_new_node(ino_t *i_ino);
 int bplus_tree_allocate_node(char *path, ino_t *i_ino);
 int bplus_tree_deinit(char *meta_dir);
 
-int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path);
+int bplus_tree_delete_item(char *root_path,
+			   bplus_tree_traverse_path_st *traverse_path);
 int bplus_tree_delete(char *root_path, char *path);
 
 int bplus_tree_insert(char *root_path, char *path);
@@ -103,11 +104,15 @@ int bplus_tree_flush_traverse_path(bplus_tree_traverse_path_st *traverse_path);
 int bplus_tree_free_traverse_path(bplus_tree_traverse_path_st *traverse_path);
 int bplus_tree_free_pe(path_element_st *path_element);
 
+int bplus_tree_shift_left_keys(void *internal_node,
+                               int position,
+                               uint16_t nr_keys);
 int bplus_tree_shift_right_keys(void *internal_node,
                                 b_plus_tree_key_t *key,
                                 uint16_t nr_keys);
 
 int bplus_tree_shift_right_dc(void *internal_node, int position, uint16_t nr_dc);
+int bplus_tree_shift_left_dc(void *internal_node, int position, uint16_t nr_dc);
 
 int bplus_tree_shift_left(void *leaf_node, int position, uint16_t nr_items);
 int bplus_tree_shift_right(void *leaf_node, item_st *item, uint16_t nr_items);
@@ -131,7 +136,8 @@ int bplus_tree_flow_dc(
 			uint16_t src_pos_dc,
 			uint16_t dst_pos_dc);
 
-int bplus_tree_flow_item(void *src, void *dest);
+int bplus_tree_flow_item_left(void *src, void *dest, int src_pos);
+int bplus_tree_flow_item(void *src, void *dest, int src_pos);
 
 int bplus_tree_rebalance(char *root_path,
 			 bplus_tree_traverse_path_st *traverse_path,
@@ -140,8 +146,10 @@ int bplus_tree_rebalance(char *root_path,
 int bplus_tree_rebalance_insert(char *root_path,
 				bplus_tree_traverse_path_st *traverse_path,
                                 item_st *item);
-int bplus_tree_rebalance_delete(bplus_tree_traverse_path_st *traverse_path,
-                                item_st *item);
+int bplus_tree_rebalance_delete(char *root_path,
+				bplus_tree_traverse_path_st *traverse_path);
+
+int bplus_tree_rebalance_delete_handle(bplus_tree_balance_st *tb);
 
 int bplus_tree_initialize_allocator();
 
@@ -203,6 +211,9 @@ void bplus_tree_adjust_leaf(void *leaf_node,
                             item_st *item);
 
 int bplus_tree_reset_key(void *internal_node, int position);
+void bplus_tree_mark_for_delete(block_head_st *block_head);
+int bplus_tree_delete_node(void *node, char *path);
+
 
 void bplus_tree_get_key_to_insert(void *node,
                                   b_plus_tree_key_t *key);
@@ -214,5 +225,14 @@ void bplus_tree_attach_neighbor(bplus_tree_balance_st *tb,
                                 uint8_t level,
                                 int position);
 
-void bplus_tree_delete_item_pos0(bplus_tree_traverse_path_st *traverse_path);
+void bplus_tree_delete_item_pos0(bplus_tree_traverse_path_st *traverse_path,
+				 void *leaf_node,
+				 bool force);
+void bplus_tree_simple_delete(bplus_tree_traverse_path_st *traverse_path);
+void *bplus_tree_get_left_sibling(bplus_tree_balance_st *tb, uint8_t level);
+void *bplus_tree_get_left_sibling_path(bplus_tree_balance_st *tb, uint8_t level);
+void *bplus_tree_get_right_sibling(bplus_tree_balance_st *tb, uint8_t level);
+int bplus_tree_delete_handle_case1(bplus_tree_balance_st *tb);
+int bplus_tree_delete_handle_case2(bplus_tree_balance_st *tb);
+int bplus_tree_delete_key(bplus_tree_balance_st *tb, flow_mode_et flow_mode);
 

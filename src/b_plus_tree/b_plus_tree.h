@@ -23,6 +23,14 @@ typedef enum neighbor
 
 }neighbor_et;
 
+typedef enum flow_mode
+{
+
+	RIGHT_SIB_TO_NODE = 0,
+	NODE_TO_LEFT_SIB = 1
+
+}flow_mode_et;
+
 /*
  * Following structure will remain on every node.
  */

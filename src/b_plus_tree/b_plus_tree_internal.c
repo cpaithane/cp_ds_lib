@@ -236,6 +236,8 @@ int bplus_tree_flush_siblings(sll_st *tb_left)
 					 node, NODE_SIZE);
 		CHECK_RC_ASSERT(rc, EOK);
 
+		bplus_tree_delete_node(node, path);
+
 		/*
 		 * fill_pe allocates node and path. Lets deallocate them.
 		 */
@@ -273,9 +275,9 @@ int bplus_tree_flush_tb(bplus_tree_balance_st *tb)
 		tb_right = tb->tb_right[i];
 		bplus_tree_flush_siblings(tb_left);
 		bplus_tree_flush_siblings(tb_right);
-		
+
 	}
-	
+
 	return rc;
 
 }
@@ -305,24 +307,13 @@ int bplus_tree_flush_traverse_path(bplus_tree_traverse_path_st *traverse_path)
 		rc = write_file_contents(path, WRITE_FLAGS, WRITE_MODE,
 					 node, NODE_SIZE);
 
+		CHECK_RC_ASSERT(rc, EOK);
 		if (rc != EOK)
 		{
 			break;
 		}
 
-		/*
-		 * If deletion of items result into node with zero items, delete
-		 * the node in question.
-		 */
-		block_head = bplus_tree_get_block_head(node);
-		if (block_head->nr_items == 0)
-		{
-
-			CHECK_RC_ASSERT(block_head->free_space, BLOCK_HEAD_SIZE);
-			rc = delete_file(path);
-			CHECK_RC_ASSERT(rc, EOK);
-
-		}
+		bplus_tree_delete_node(node, path);
 
 	}
 
@@ -340,7 +331,7 @@ int bplus_tree_free_traverse_path(bplus_tree_traverse_path_st *traverse_path)
 	int i;
 	char *path;
 	void *node;
-	
+
 	for (i= 0; i < BPLUS_MAX_HEIGHT; i++)
 	{
 
@@ -375,6 +366,84 @@ int bplus_tree_free_pe(path_element_st *path_element)
 }
 
 /*
+ * This function does following : 
+ * If all the items right sibling are flown then, right sibling
+ * becomes empty. So, disk child in parent node should be reset.
+ * Approach should be left shift the disk children in parent and 
+ * reset the associated disk child in parent node.
+ */
+int bplus_tree_delete_key(bplus_tree_balance_st *tb, flow_mode_et mode)
+{
+
+	int rc = EOK;
+	int position = 0;
+	int nr_keys_par, nr_dc_par;
+	char *new_root_node_path = NULL;
+	ino_t new_root_ino;
+	block_head_st *block_head_par = NULL;
+	void *parent_node = NULL;
+
+	position = bplus_tree_get_pos_path(
+		tb->tb_path,
+		(BTREE_LEAF_LEVEL + 1));
+
+	/*
+	 * Please refere comments in callers to get detailed idea about mode.
+	 */
+	if (mode == NODE_TO_LEFT_SIB)
+	{
+		position -= 1;
+	}
+
+	parent_node = bplus_tree_get_parent_node_path(tb->tb_path,
+			BTREE_LEAF_LEVEL);
+	block_head_par = bplus_tree_get_block_head(parent_node);
+
+	nr_keys_par = NR_KEYS(block_head_par->nr_items);
+	nr_dc_par = nr_keys_par + 1;
+
+	/*
+	 * If parent contains only one key then the node should contain all
+	 * the remnant data and it should be root.
+	 */
+	if (nr_keys_par == 1)
+	{
+
+		CHECK_RC_ASSERT(block_head_par->nr_items, 3);
+
+		new_root_node_path = bplus_tree_get_pe_path_path(tb->tb_path,
+							BTREE_LEAF_LEVEL);
+
+		/*
+		 * In case of items shifting from node to left sibling, left sibling
+		 * will be new root.
+		 */
+		if (mode == NODE_TO_LEFT_SIB)
+		{
+			new_root_node_path = bplus_tree_get_left_sibling_path(tb,
+							BTREE_LEAF_LEVEL);
+		}
+
+		rc = is_path_present(new_root_node_path, &new_root_ino);
+		CHECK_RC_ASSERT(rc, EOK);
+		bplus_tree_adjust_root(tb->tb_root_path, new_root_ino);
+		bplus_tree_mark_for_delete(block_head_par);
+		return rc;
+
+	}
+
+	bplus_tree_shift_left_dc(parent_node, (position + 1), nr_dc_par);
+
+	/*
+	 * Also, left shift the parent node.
+	 */
+	bplus_tree_shift_left_keys(parent_node, position, nr_keys_par);
+
+	return rc;
+
+}
+
+/*
  * This function left shifts one item from leaf node. Returns the slot where to 
  * insert/delete new item
  */
@@ -383,6 +452,7 @@ int bplus_tree_shift_left(void *leaf_node, int position, uint16_t nr_items)
 
 	int i;
 	item_st *tmp_item1, *tmp_item2;
+	block_head_st *block_head = NULL;
 
 	for (i = position; i < (nr_items - 1); i++)
 	{
@@ -393,7 +463,60 @@ int bplus_tree_shift_left(void *leaf_node, int position, uint16_t nr_items)
 
 	}
 
+	/*
+	 * Mark last item as 0. i.e. free.
+	 */
+	tmp_item1 = bplus_tree_get_item(leaf_node, i);
+	memset(tmp_item1, 0, ITEM_SIZE);
+
+	block_head = bplus_tree_get_block_head(leaf_node);
+	CHECK_RC_ASSERT((block_head == NULL), 0);
+
+	/*
+	 * Adjust counters.
+	 */
+	block_head->nr_items -= 1;
+	block_head->free_space += ITEM_SIZE;
+		
 	return i;
+
+}
+
+/*
+ * This function left shifts disk children to make space at position.
+ */
+int bplus_tree_shift_left_dc(void *internal_node, int position, uint16_t nr_dc)
+{
+
+	disk_child_st *dc1, *dc2;
+	block_head_st *block_head = NULL;
+	int j;
+
+	for (j = position; j < (nr_dc - 1); j++)
+	{
+
+		dc1 = bplus_tree_get_dc(internal_node, j);
+		dc2 = bplus_tree_get_dc(internal_node, j + 1);
+		memcpy(dc1, dc2, DC_SIZE);
+
+	}
+
+	/*
+	 * Mark last dc as 0. i.e. free.
+	 */
+	dc1 = bplus_tree_get_dc(internal_node, j);
+	memset(dc1, 0, DC_SIZE);
+
+	block_head = bplus_tree_get_block_head(internal_node);
+	CHECK_RC_ASSERT((block_head == NULL), 0);
+
+	/*
+	 * Adjust counters.
+	 */
+	block_head->nr_items -= 1;
+	block_head->free_space += DC_SIZE;
+		
+	return j;
 
 }
 
@@ -415,6 +538,46 @@ int bplus_tree_shift_right_dc(void *internal_node, int position, uint16_t nr_dc)
 
 	}
 
+	return j;
+
+}
+
+/*
+ * This function shifts keys to left.
+ */
+int bplus_tree_shift_left_keys(void *internal_node,
+				int position,
+				uint16_t nr_keys)
+{
+
+	b_plus_tree_key_t *key1, *key2;
+	block_head_st *block_head = NULL;
+	int j;
+
+	for (j = position; j < (nr_keys - 1); j++)
+	{
+
+		key1 = bplus_tree_get_key(internal_node, j);
+		key2 = bplus_tree_get_key(internal_node, j + 1);
+		memcpy(key1, key2, KEY_SIZE);
+
+	}
+
+	/*
+	 * Mark last dc as 0. i.e. free.
+	 */
+	key1 = bplus_tree_get_key(internal_node, j);
+	memset(key1, 0, KEY_SIZE);
+
+	block_head = bplus_tree_get_block_head(internal_node);
+	CHECK_RC_ASSERT((block_head == NULL), 0);
+
+	/*
+	 * Adjust counters.
+	 */
+	block_head->nr_items -= 1;
+	block_head->free_space += KEY_SIZE;
+		
 	return j;
 
 }
@@ -539,7 +702,7 @@ int bplus_tree_get_pos_path(bplus_tree_traverse_path_st *traverse_path,
  * This function gets pe_path of a node at level.
  */
 char *bplus_tree_get_pe_path_path(bplus_tree_traverse_path_st *traverse_path,
-                            uint8_t level)
+				  uint8_t level)
 {
 
 	CHECK_RC_ASSERT((traverse_path == NULL), 0);
@@ -681,9 +844,16 @@ void bplus_tree_adjust_leaf(void *leaf_node,
 	void *node;
 	int nr_items_to_flow = (MAX_ITEMS / 2);
 
+	block_head = bplus_tree_get_block_head(leaf_node);
+
 	for (i = 0; i < nr_items_to_flow; i++)
 	{
-		bplus_tree_flow_item(leaf_node, new_leaf_node);
+
+		bplus_tree_flow_item(
+				leaf_node,
+				new_leaf_node,
+				(block_head->nr_items - 1));
+
 	}
 
 	/*
@@ -693,7 +863,7 @@ void bplus_tree_adjust_leaf(void *leaf_node,
 	 * A. Item should be inserted in leaf_node in following case
 	 * item = 4
 	 *
- 	 * B. Item should be inserted in new_leaf_node in following case
+	 * B. Item should be inserted in new_leaf_node in following case
 	 * item = 6
 	 */
 	block_head = bplus_tree_get_block_head(leaf_node);
@@ -885,16 +1055,16 @@ int bplus_tree_flow_item_case1(
  * 1. Do normal insertion into leaf node and adjust new leaf node.
  */
 int bplus_tree_flow_item_case2(
-			    bplus_tree_balance_st *tb,
-			    bool flow_mode,
-			    void *leaf_node,
-			    void *new_leaf_node,
-			    void *internal_node,
-			    item_st *item,
-			    char *internal_node_path,
-			    char *new_leaf_node_path,
-			    ino_t new_leaf_ino,
-			    ino_t internal_ino)
+		    bplus_tree_balance_st *tb,
+		    bool flow_mode,
+		    void *leaf_node,
+		    void *new_leaf_node,
+		    void *internal_node,
+		    item_st *item,
+		    char *internal_node_path,
+		    char *new_leaf_node_path,
+		    ino_t new_leaf_ino,
+		    ino_t internal_ino)
 {
 
 	int i, rc = EOK;
@@ -964,7 +1134,7 @@ int bplus_tree_flow_item_case2(
 	nr_dc_internal = nr_keys_internal + 1;
 	nr_keys_to_flow = (nr_keys_internal / 2);
 	nr_dc_to_flow = nr_keys_to_flow + 1;
-	
+
 	/*
 	 * As new_internal_node will be a right neighbor of internal_node, level of
 	 * internal_node should be equal to level of internal_node.
@@ -1044,7 +1214,7 @@ int bplus_tree_flow_item_case2(
 		nr_dc_to_shift = nr_keys_to_shift;
 
 	}
-	
+
 	/*
 	 * Copy appropriate disk child as per the flow_mode.
 	 */
@@ -1358,10 +1528,66 @@ int bplus_tree_flow_dc(
 }
 
 /*
+ * Reset the nr_items and free_space inside block_head.
+ */
+void bplus_tree_mark_for_delete(block_head_st *block_head)
+{
+
+	block_head->nr_items = 0;
+	block_head->free_space = (NODE_SIZE - BLOCK_HEAD_SIZE);
+
+}
+
+/*
+ * If deletion of items result into node with zero items, delete the node in 
+ * question. Otherwise, this function just returns without deleting.
+ */
+int bplus_tree_delete_node(void *node, char *path)
+{
+
+	block_head_st *block_head = NULL;
+	int rc = EOK;
+
+	block_head = bplus_tree_get_block_head(node);
+	if (block_head->nr_items == 0)
+	{
+
+		CHECK_RC_ASSERT(block_head->free_space,
+				(NODE_SIZE - BLOCK_HEAD_SIZE));
+		rc = delete_file(path);
+		CHECK_RC_ASSERT(rc, EOK);
+
+	}
+
+	return rc;
+
+}
+
+/*
+ * Wrapper over bplus_tree_flow_item which increments nr_items and size of source
+ * buffer.
+ */
+int bplus_tree_flow_item_left(void *src, void *dest, int src_pos)
+{
+
+	block_head_st *block_head_src = NULL;
+	int i;
+
+	i = bplus_tree_flow_item(src, dest, src_pos);
+
+	block_head_src = bplus_tree_get_block_head(src);
+	block_head_src->nr_items += 1;
+	block_head_src->free_space -= ITEM_SIZE;
+
+	return i;
+
+}
+
+/*
  * This function is used for flowing an item from one node to another.
  * This is only used for leaf node.
  */
-int bplus_tree_flow_item(void *src, void *dest)
+int bplus_tree_flow_item(void *src, void *dest, int src_pos)
 {
 
 	int rc = EOK;
@@ -1380,7 +1606,7 @@ int bplus_tree_flow_item(void *src, void *dest)
 	 * Shift dest items right one by one.
 	 * Take dest_item at empty location.
 	 */
-	src_item = bplus_tree_get_item(src, (block_head_src->nr_items - 1));
+	src_item = bplus_tree_get_item(src, src_pos); 
 	i = bplus_tree_shift_right(dest, src_item, block_head_dest->nr_items);
 	dest_item = bplus_tree_get_item(dest, i);
 	memcpy(dest_item, src_item, ITEM_SIZE);
@@ -1669,7 +1895,7 @@ bplus_tree_balance_st *bplus_tree_init_tb(
 		tb->tb_left[i] = NULL;
 		rc = bplus_tree_get_neighbor(traverse_path, i, neighbor, 
 					    LEFT, path);
-		if (rc = EOK)
+		if (rc == EOK)
 		{
 
 			bplus_tree_fill_pe(neighbor, path, 0, path_element);
@@ -1685,7 +1911,7 @@ bplus_tree_balance_st *bplus_tree_init_tb(
 		tb->tb_right[i] = NULL;
 		rc = bplus_tree_get_neighbor(traverse_path, i, neighbor,
 					    RIGHT, path);
-		if (rc = EOK)
+		if (rc == EOK)
 		{
 
 			bplus_tree_fill_pe(neighbor, path, 0, path_element);
@@ -1846,30 +2072,22 @@ int bplus_tree_reset_key(void *internal_node, int position)
  * This function handles a special case with following specs: 
  * 1. Position at which item to be deleted in leaf node is 0.
  */
-void bplus_tree_delete_item_pos0(bplus_tree_traverse_path_st *traverse_path)
+void bplus_tree_delete_item_pos0(bplus_tree_traverse_path_st *traverse_path,
+				 void *leaf_node,
+				 bool force)
 {
 
 	item_st *tmp_item1 = NULL;
 	b_plus_tree_key_t key;
 	b_plus_tree_key_t *par_key = NULL;
-	void *leaf_node, *parent_node;
+	void *parent_node;
 	int par_position = 0;
-	int position = 0;
-
-	leaf_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
-
-	tmp_item1 = bplus_tree_get_item(leaf_node, 0);
-	key.i_ino = tmp_item1->i_ino;
 
 	parent_node = bplus_tree_get_parent_node_path(
 			traverse_path, BTREE_LEAF_LEVEL);
 
 	if (parent_node != NULL)
 	{
-
-		position = bplus_tree_get_pos_path(
-			traverse_path, (BTREE_LEAF_LEVEL));
-		CHECK_RC_ASSERT(position, 0);
 
 		par_position = bplus_tree_get_pos_path(
 			traverse_path, (BTREE_LEAF_LEVEL + 1));
@@ -1878,14 +2096,106 @@ void bplus_tree_delete_item_pos0(bplus_tree_traverse_path_st *traverse_path)
 		 * For parent position to be non-zero, key in parent is equal to
 		 * key of item at first location in the leaf.
 		 */
-		if (par_position != 0)
+		if ((par_position != 0) || (force == TRUE))
 		{
+
+			tmp_item1 = bplus_tree_get_item(leaf_node, 0);
+			key.i_ino = tmp_item1->i_ino;
 
 			par_key = bplus_tree_get_key(parent_node, par_position);
 			CHECK_RC_ASSERT((par_key == NULL), 0);
 			memcpy(par_key, &key, KEY_SIZE);
 
 		}
+
+	}
+
+}
+
+/*
+ * This function returns first left sibling at level.
+ */
+void *bplus_tree_get_left_sibling_path(bplus_tree_balance_st *tb, uint8_t level)
+{
+
+	path_element_st *pe = NULL;
+	sll_st *left = NULL;
+
+	left = tb->tb_left[level];
+	pe = (path_element_st *)left->sll_data;
+	return (pe->pe_path);
+
+}
+
+/*
+ * This function returns first left sibling at level.
+ */
+void *bplus_tree_get_left_sibling(bplus_tree_balance_st *tb, uint8_t level)
+{
+
+	path_element_st *pe = NULL;
+	sll_st *left = NULL;
+
+	left = tb->tb_left[level];
+	pe = (path_element_st *)left->sll_data;
+	return (pe->pe_node);
+
+}
+
+/*
+ * This function returns first right sibling at level.
+ */
+void *bplus_tree_get_right_sibling(bplus_tree_balance_st *tb, uint8_t level)
+{
+
+	path_element_st *pe = NULL;
+	sll_st *right = NULL;
+
+	right = tb->tb_right[level];
+	pe = (path_element_st *)right->sll_data;
+	return (pe->pe_node);
+
+}
+
+/*
+ * This function does following : 
+ * Left shift the leaf node.
+ * Handle the scenario involving position = 0.
+ */
+void bplus_tree_simple_delete(bplus_tree_traverse_path_st *traverse_path)
+{
+
+	int i, position, par_pos;
+	void *leaf_node = NULL;
+	block_head_st *block_head = NULL;
+	
+	position = bplus_tree_get_pos_path(traverse_path, BTREE_LEAF_LEVEL);
+
+	leaf_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
+	CHECK_RC_ASSERT((leaf_node == NULL), 0);
+
+	block_head = bplus_tree_get_block_head(leaf_node);
+	CHECK_RC_ASSERT((block_head == NULL), 0);
+
+	/*
+	 * This means, there are sufficient items in leaf node. We could have two
+	 * different scenarios as per position.
+	 */
+	i = bplus_tree_shift_left(leaf_node, position, block_head->nr_items);
+
+	/*
+	 * If item deleted was at position 0, copy key into parent.
+	 */
+	if (position == 0)
+	{
+
+		/*
+		 * As leaf node is passed here, par_pos is position of parent in
+		 * parent node.
+		 */
+		par_pos = bplus_tree_get_pos_path(traverse_path,
+						 (BTREE_LEAF_LEVEL + 1));
+		bplus_tree_delete_item_pos0(traverse_path, leaf_node, FALSE);
 
 	}
 

@@ -229,7 +229,7 @@ int bplus_tree_delete(char *root_path, char *path)
 
 	}
 
-	rc = bplus_tree_delete_item(traverse_path);
+	rc = bplus_tree_delete_item(root_path, traverse_path);
 	if (rc != EOK)
 	{
 
@@ -399,7 +399,15 @@ int bplus_tree_search_key(char *root_path,
 	CHECK_RC_ASSERT(rc, EOK);
 
 	rc = get_path(META_DIR, root_ino, next_path);
-	CHECK_RC_ASSERT(rc, EOK);
+	if (rc != EOK)
+	{
+
+		free(next_path);
+		free(buf);
+		return rc;
+
+	}
+
 	path = next_path;
 	traverse_path->path_length = INVALID_PATH_LENGTH;
 
@@ -578,15 +586,14 @@ int bin_search(
  * This function deletes an item located at pe_position in leaf node and re-balances
  * b+ tree.
  */
-int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
+int bplus_tree_delete_item(char *root_path,
+			   bplus_tree_traverse_path_st *traverse_path)
 {
 
 	int rc = EOK;
 	void *leaf_node = NULL;
-	int i, position = 0;
+	int i;
 	block_head_st *block_head = NULL;
-	item_st *tmp_item1 = NULL;
-	char *root_path = NULL;
 
 	leaf_node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
 	CHECK_RC_ASSERT((leaf_node == NULL), 0);
@@ -594,50 +601,22 @@ int bplus_tree_delete_item(bplus_tree_traverse_path_st *traverse_path)
 	block_head = bplus_tree_get_block_head(leaf_node);
 	CHECK_RC_ASSERT((block_head == NULL), 0);
 
-	position = bplus_tree_get_pos_path(traverse_path, BTREE_LEAF_LEVEL);
-
 	/*
 	 * Condition for rebalancing after deletion is that leaf node should have 
 	 * less than MAX_ITEMS / 2 items. Otherwise, it would be simple delete op.
 	 */
-	if (block_head->nr_items < (MAX_ITEMS / 2))
+	if ((block_head->nr_items < (MAX_ITEMS / 2)) &&
+	    (traverse_path->path_length))
 	{
 
-		root_path = NULL;
-		tmp_item1 = bplus_tree_get_item(leaf_node, position);
 		rc = bplus_tree_rebalance(root_path,
 					  traverse_path,
-					  tmp_item1, BPLUS_DELETE);
+					  NULL, BPLUS_DELETE);
 		return rc;
 
 	}
 
-	/*
-	 * This means, there are sufficient items in leaf node. We could have two
-	 * different scenarios as per position.
-	 */
-	i = bplus_tree_shift_left(leaf_node, position, block_head->nr_items);
-
-	/*
-	 * Mark last item as 0. i.e. free.
-	 */
-	tmp_item1 = bplus_tree_get_item(leaf_node, i);
-	memset(tmp_item1, 0, ITEM_SIZE);
-
-	/*
-	 * If item deleted was at position 0, copy key into parent.
-	 */
-	if (position == 0)
-	{
-		bplus_tree_delete_item_pos0(traverse_path);
-	}
-
-	/*
-	 * Adjust counters.
-	 */
-	block_head->nr_items -= 1;
-	block_head->free_space += ITEM_SIZE;
-	
+	bplus_tree_simple_delete(traverse_path);
 	return rc;
 
 }
@@ -803,13 +782,238 @@ int bplus_tree_rebalance_insert_handle(bplus_tree_balance_st *tb, item_st *item)
 }
 
 /*
- * This function does rebalancing of b+ tree while deletion.
+ * This function handles a specific case in deletion where right sibling of a node
+ * is not present.
  */
-int bplus_tree_rebalance_delete(bplus_tree_traverse_path_st *traverse_path,
-				item_st *item)
+int bplus_tree_delete_handle_case1(bplus_tree_balance_st *tb)
+{
+
+	int i, rc = EOK;
+	void *left_sib = NULL;
+	void *node = NULL;
+	bplus_tree_traverse_path_st *traverse_path = NULL;
+	block_head_st *block_head_sib = NULL;
+	block_head_st *block_head = NULL;
+	uint16_t nr_items_sib = 0;
+	uint16_t nr_items = 0;
+	uint16_t nr_items_can_acc = 0;
+
+	traverse_path = tb->tb_path;
+
+	/*
+	 * Do a simple delete first for the item in question.
+	 */
+	bplus_tree_simple_delete(traverse_path);
+
+	/*
+	 * Get the left sibling.
+	 */
+	left_sib = bplus_tree_get_left_sibling(tb, BTREE_LEAF_LEVEL);
+	CHECK_RC_ASSERT((left_sib == NULL), 0);
+
+	/*
+	 * Get the leaf node in path.
+	 */
+	node = bplus_tree_get_node_path(traverse_path, BTREE_LEAF_LEVEL);
+
+	/*
+	 * Check how many items present in left sibling. If left sibling can
+	 * accomodate all items, then merge the node with left sibling.
+	 */
+	block_head_sib = bplus_tree_get_block_head(left_sib);
+	block_head = bplus_tree_get_block_head(node);
+	nr_items_sib = block_head_sib->nr_items;
+	nr_items = block_head->nr_items;
+
+	/*
+	 * nr_items_can_acc : No. of items can be accommodate in left sibling.
+	 * If this is 0, then no flow can happen or
+	 * Also, if no. of items in node is greater than MAX_ITEMS/2.
+	 * If one of the three conditions holds true, return.
+	 */
+	nr_items_can_acc = (MAX_ITEMS - nr_items_sib);
+	if ((nr_items_can_acc == 0) ||
+		(nr_items >= (MAX_ITEMS / 2)) ||
+		(nr_items_can_acc < nr_items))
+	{
+		return rc;
+	}
+
+	CHECK_RC_ASSERT((nr_items_can_acc >= nr_items), 1);
+
+	/*
+	 * See how many no. of items can left sibling accommodate. If it can 
+	 * accommodate all then flow all to left sibling from node.
+	 */
+	for (i = 0; i < nr_items; i++)
+	{
+		bplus_tree_flow_item(node, left_sib, i);
+	}
+
+	/*
+	 * Now, shift left key and disk child in parent.
+	 * As items are flown from node to left sibling, parent's position of left
+	 * sibling is one prior to node.
+	 */
+	rc = bplus_tree_delete_key(tb, NODE_TO_LEFT_SIB);
+	return rc;
+
+}
+
+/*
+ * This function handles a specific case in deletion where right sibling of a node
+ * is present.
+ */
+int bplus_tree_delete_handle_case2(bplus_tree_balance_st *tb)
+{
+
+	int i, rc = EOK;
+	void *right_sib = NULL;
+	void *node = NULL;
+	block_head_st *block_head_sib = NULL;
+	block_head_st *block_head_par = NULL;
+	uint16_t nr_items_sib = 0;
+	uint16_t nr_items_to_flow = 0;
+	bool handle_pos0 = FALSE;
+
+	/*
+	 * Left shift the node one by one.
+	 */
+	bplus_tree_simple_delete(tb->tb_path);
+
+	/*
+	 * Check if sufficient items are present in right sibling.
+	 * If sufficient items are present, flow first item from right sibling to
+	 * node.
+	 */
+	right_sib = bplus_tree_get_right_sibling(tb, BTREE_LEAF_LEVEL);
+	block_head_sib = bplus_tree_get_block_head(right_sib);
+
+	nr_items_sib = block_head_sib->nr_items;
+	nr_items_to_flow = nr_items_sib;
+	if (nr_items_sib >= (MAX_ITEMS / 2))
+	{
+
+		nr_items_to_flow = 1;
+		handle_pos0 = TRUE;
+
+	}
+
+	node = bplus_tree_get_node_path(tb->tb_path, BTREE_LEAF_LEVEL);
+
+	for (i = 0; i < nr_items_to_flow; i++)
+	{
+		bplus_tree_flow_item_left(right_sib, node, i);
+	}
+
+	/*
+	 * As all items in sibling are flown to node, lets marks the sibling for 
+	 * deletion.
+	 */
+	if (nr_items_to_flow > 1)
+	{
+		bplus_tree_mark_for_delete(block_head_sib);
+	}
+
+	/*
+	 * If position of item in sibling is 0, handle it.
+	 */
+	if (handle_pos0 == TRUE)
+	{
+
+		/*
+		 * Lets flow all the items from right sibling to the node and left
+		 * shift.
+		 */
+		i = bplus_tree_shift_left(right_sib, 0, block_head_sib->nr_items);
+		bplus_tree_delete_item_pos0(
+					tb->tb_path,
+					right_sib,
+					TRUE);
+
+	}
+	else
+	{
+
+		/*
+		 * As items are flown from right sibling to node, no need to adjust
+		 * parent's position.
+		 */
+		rc = bplus_tree_delete_key(tb, RIGHT_SIB_TO_NODE);
+
+	}
+
+	return rc;
+
+}
+
+/*
+ * This function is core deletion logic and handles every case of deletion.
+ */
+int bplus_tree_rebalance_delete_handle(bplus_tree_balance_st *tb)
 {
 
 	int rc = EOK;
+	bplus_tree_traverse_path_st *traverse_path = NULL;
+	int nr_right_siblings = 0;
+
+	traverse_path = tb->tb_path;
+	CHECK_RC_ASSERT((traverse_path == NULL), 0);
+
+	/*
+	 * Single node B+ tree should not come here.
+	 */
+	CHECK_RC_ASSERT((traverse_path->path_length > 0), 1);
+
+	/*
+	 * Figure out whether right sibling for the node is present or not.
+	 */
+	nr_right_siblings = tb->tb_nr_right[BTREE_LEAF_LEVEL];
+	if (nr_right_siblings == 0)
+	{
+		rc = bplus_tree_delete_handle_case1(tb);
+	}
+	else
+	{
+		rc = bplus_tree_delete_handle_case2(tb);
+	}
+
+	return rc;
+
+}
+
+/*
+ * This function does rebalancing of b+ tree while deletion.
+ */
+int bplus_tree_rebalance_delete(char *root_path,
+				bplus_tree_traverse_path_st *traverse_path)
+{
+
+	int i, rc = EOK;
+	bplus_tree_balance_st *tb;
+
+	tb = bplus_tree_init_tb(root_path, traverse_path);
+	CHECK_RC_ASSERT((tb == NULL), 0);
+
+	rc = bplus_tree_rebalance_delete_handle(tb);
+	if (rc != EOK)
+	{
+	
+		bplus_tree_deinit_tb(tb);
+		return rc;
+
+	}
+
+	rc = bplus_tree_flush_tb(tb);
+	if (rc != EOK)
+	{
+
+		bplus_tree_deinit_tb(tb);
+		return rc;
+
+	}
+
+	bplus_tree_deinit_tb(tb);
 
 	return rc;
 
@@ -832,7 +1036,7 @@ int bplus_tree_rebalance(char *root_path,
 	}
 	else
 	{
-		rc = bplus_tree_rebalance_delete(traverse_path, item);
+		rc = bplus_tree_rebalance_delete(root_path, traverse_path);
 	}
 
 	return rc;

@@ -1,7 +1,7 @@
 #include "b_plus_tree_interface.h"
 
-#define DATA ".data"
-#define MAX_INPUT_ITEMS 16515
+#define DATA ".data\0"
+#define MAX_INPUT_ITEMS 16380
 
 /*
  * This function forms a file name using iterator. Strictly, used for unit test 
@@ -57,12 +57,12 @@ int bplus_create_data()
 }
 
 /*
- * This function inserts keys in b+ tree in either ascending or descending manner.
+ * This function handles insertion into B+ tree.
  */
-int bplus_tc_insert_keys(bool is_ascending)
+int bplus_tree_tc_insert_handle(int i)
 {
 
-	int i, rc = EOK;
+	int rc = EOK;
 	bplus_tree_traverse_path_st *traverse_path = NULL;
 	char *file_name = NULL;
 	b_plus_tree_key_t *key = NULL;
@@ -74,27 +74,44 @@ int bplus_tc_insert_keys(bool is_ascending)
 	CHECK_RC_ASSERT((key == NULL), 0);
 	memset(key, 0, KEY_SIZE);
 
+	get_file_name(file_name, i);
+	rc = bplus_tree_insert(ROOT, file_name);
+	CHECK_RC_ASSERT(rc, EOK);
+	rc = bplus_form_key(file_name, key);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	traverse_path =
+		(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
+	CHECK_RC_ASSERT((traverse_path == NULL), 0);
+	memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
+
+	rc = bplus_tree_search_key(ROOT, key, traverse_path);
+	CHECK_RC_ASSERT(rc, EEXIST);
+	bplus_tree_free_traverse_path(traverse_path);
+
+	rc = EOK;
+	free(key);
+	free(file_name);
+	return rc;
+
+}
+
+/*
+ * This function inserts keys in b+ tree in either ascending or descending manner.
+ */
+int bplus_tc_insert_keys(bool is_ascending)
+{
+
+	int i, rc = EOK;
+
 	if (is_ascending == TRUE)
 	{
-
 
 		for (i = 0; i < MAX_INPUT_ITEMS; i++)
 		{
 
-			get_file_name(file_name, i);
-			rc = bplus_tree_insert(ROOT, file_name);
+			rc = bplus_tree_tc_insert_handle(i);
 			CHECK_RC_ASSERT(rc, EOK);
-			rc = bplus_form_key(file_name, key);
-			CHECK_RC_ASSERT(rc, EOK);
-
-			traverse_path =
-			(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
-			CHECK_RC_ASSERT((traverse_path == NULL), 0);
-			memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
-
-			rc = bplus_tree_search_key(ROOT, key, traverse_path);
-			CHECK_RC_ASSERT(rc, EEXIST);
-			bplus_tree_free_traverse_path(traverse_path);
 
 		}
 	}
@@ -104,26 +121,13 @@ int bplus_tc_insert_keys(bool is_ascending)
 		for (i = MAX_INPUT_ITEMS; i >= 0; i--)
 		{
 
-			get_file_name(file_name, i);
-			rc = bplus_tree_insert(ROOT, file_name);
+			rc = bplus_tree_tc_insert_handle(i);
 			CHECK_RC_ASSERT(rc, EOK);
-			rc = bplus_form_key(file_name, key);
-			CHECK_RC_ASSERT(rc, EOK);
-
-			traverse_path =
-			(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
-			CHECK_RC_ASSERT((traverse_path == NULL), 0);
-			memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
-			rc = bplus_tree_search_key(ROOT, key, traverse_path);
-			CHECK_RC_ASSERT(rc, EEXIST);
-			bplus_tree_free_traverse_path(traverse_path);
 
 		}
 
 	}
 
-	free(key);
-	free(file_name);
 	return rc;
 
 }
@@ -191,19 +195,15 @@ int bplus_tc_search_keys()
 }
 
 /*
- * This function deletes keys from bplus tree and searches the same key.
+ * This function is handler for key deletion in B+ tree.
  */
-int bplus_tc_delete_keys(int position)
+int bplus_tree_tc_delete_handle(int i)
 {
 
-	int i, rc = EOK;
-	char *file_name;
-	bplus_tree_traverse_path_st *traverse_path = NULL;
+	int rc = EOK;
+	char *file_name = NULL;
 	b_plus_tree_key_t *key = NULL;
-	b_plus_tree_key_t first_key;
-	void *leaf_node;
-	item_st *item, *first_item;
-	block_head_st *block_head = NULL;
+	bplus_tree_traverse_path_st *traverse_path = NULL;
 
 	file_name = (char *)malloc(MAX_PATH);
 	CHECK_RC_ASSERT((file_name == NULL), 0);
@@ -212,31 +212,9 @@ int bplus_tc_delete_keys(int position)
 	CHECK_RC_ASSERT((key == NULL), 0);
 	memset(key, 0, KEY_SIZE);
 
-	/*
-	 * Lets figure out the first key in leaf node.
-	 */
-	get_file_name(file_name, position);
+	get_file_name(file_name, i);
 	rc = bplus_form_key(file_name, key);
 	CHECK_RC_ASSERT(rc, EOK);
-
-	traverse_path =
-		(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
-	CHECK_RC_ASSERT((traverse_path == NULL), 0);
-	memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
-
-	rc = bplus_tree_search_key(ROOT, key, traverse_path);
-	CHECK_RC_ASSERT(rc, EEXIST);
-
-	leaf_node = bplus_tree_get_node_path(traverse_path,
-					    BTREE_LEAF_LEVEL);
-	CHECK_RC_ASSERT((leaf_node == NULL), 0);
-
-	first_item = bplus_tree_get_item(leaf_node, 0);
-	first_key.i_ino = first_item->i_ino;
-
-	rc = get_path(DATA, first_key.i_ino, file_name);
-	CHECK_RC_ASSERT(rc, EOK);
-	bplus_tree_free_traverse_path(traverse_path);
 
 	rc = bplus_tree_delete(ROOT, file_name);
 	CHECK_RC_ASSERT(rc, EOK);
@@ -246,61 +224,69 @@ int bplus_tc_delete_keys(int position)
 	CHECK_RC_ASSERT((traverse_path == NULL), 0);
 	memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
 
-	rc = bplus_tree_search_key(ROOT, &first_key, traverse_path);
+	rc = bplus_tree_search_key(ROOT, key, traverse_path);
 	CHECK_RC_ASSERT(rc, ENOENT);
 	bplus_tree_free_traverse_path(traverse_path);
 
-#ifdef BPLUS_DELETE_ADVANCE
+	printf("Deleted filename = %s, key = %u\n",
+	    file_name,
+	    (uint32_t)key->i_ino);
+
+	rc = EOK;
+	free(file_name);
+	free(key);
+
+	return rc;
+
+}
+
+/*
+ * This function deletes keys from bplus tree and searches the same key.
+ */
+int bplus_tc_delete_keys(bool is_ascending)
+{
+
+	int i, rc = EOK;
 
 	/*
 	 * Delete the inode no. of file into b+ tree.
 	 * Then, lookup inside b+ tree for the key just deleted.
 	 * Currently, testing only for single key deletion.
 	 */
-	for (i = 1; i < 2; i++)
+	if (is_ascending == TRUE)
 	{
 
-		get_file_name(file_name, i);
-		rc = bplus_form_key(file_name, key);
-		CHECK_RC_ASSERT(rc, EOK);
-
-		if (key->i_ino == first_key.i_ino)
+		for (i = 0; i < MAX_INPUT_ITEMS; i++)
 		{
-			continue;
+
+			rc = bplus_tree_tc_delete_handle(i);
+			CHECK_RC_ASSERT(rc, EOK);
+
 		}
 
-		rc = bplus_tree_delete(ROOT, file_name);
-		CHECK_RC_ASSERT(rc, EOK);
+	}
+	else
+	{
 
-		traverse_path =
-			(bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
-		CHECK_RC_ASSERT((traverse_path == NULL), 0);
-		memset(traverse_path, 0, TRAVERSE_PATH_SIZE);
+		for (i = MAX_INPUT_ITEMS - 1; i >= 0 ; i--)
+		{
 
-		rc = bplus_tree_search_key(ROOT, key, traverse_path);
-		CHECK_RC_ASSERT(rc, ENOENT);
-		bplus_tree_free_traverse_path(traverse_path);
+			rc = bplus_tree_tc_delete_handle(i);
+			CHECK_RC_ASSERT(rc, EOK);
 
-		printf("Deleted filename = %s, key = %u\n",
-		    file_name,
-		    (uint32_t)key->i_ino);
+		}
 
 	}
 
-#endif
-
-	rc = EOK;
-	free(file_name);
-	free(key);
-	
 	return rc;
 
 }
 
 /*
- * This test case tests simple insertion/lookup of 16515 objects inside b+ tree.
+ * This test case tests simple insertion/lookup/deletion of 16515 objects inside b+
+ * tree.
  */
-int bplus_test_case1(bool is_ascending)
+int bplus_test_case1(bool is_ascending_insert, bool is_ascending_delete)
 {
 
 	int rc = EOK;
@@ -314,7 +300,7 @@ int bplus_test_case1(bool is_ascending)
 	/*
 	 * Insert the inode no. of file into b+ tree.
 	 */
-	bplus_tc_insert_keys(is_ascending);
+	bplus_tc_insert_keys(is_ascending_insert);
 
 	/*
 	 * Now, search the items in b+ tree.
@@ -324,10 +310,7 @@ int bplus_test_case1(bool is_ascending)
 	/*
 	 * Now, delete keys from B+ tree.
 	 */
-	rc = bplus_tc_delete_keys(0);
-	CHECK_RC_ASSERT(rc, EOK);
-
-	rc = bplus_tc_delete_keys(130);
+	rc = bplus_tc_delete_keys(is_ascending_delete);
 	CHECK_RC_ASSERT(rc, EOK);
 
 	rc = bplus_tree_deinit(META_DIR);
@@ -344,13 +327,24 @@ int bplus_tc_execute()
 {
 
 	int rc = EOK;
-	bool is_ascending;
+	bool is_ascending_insert, is_ascending_delete;
 
-	is_ascending = TRUE;
-	rc = bplus_test_case1(is_ascending);
+	is_ascending_insert = TRUE;
+	is_ascending_delete = TRUE;
+	rc = bplus_test_case1(is_ascending_insert, is_ascending_delete);
 
-	is_ascending = FALSE;
-	rc = bplus_test_case1(is_ascending);
+	is_ascending_insert = FALSE;
+	is_ascending_delete = TRUE;
+	rc = bplus_test_case1(is_ascending_insert, is_ascending_delete);
+
+	is_ascending_insert = TRUE;
+	is_ascending_delete = FALSE;
+	rc = bplus_test_case1(is_ascending_insert, is_ascending_delete);
+
+	is_ascending_insert = FALSE;
+	is_ascending_delete = FALSE;
+	rc = bplus_test_case1(is_ascending_insert, is_ascending_delete);
+
 	return rc;
 
 }
