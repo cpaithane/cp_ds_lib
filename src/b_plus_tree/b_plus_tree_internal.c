@@ -1,6 +1,302 @@
 #include "b_plus_tree_interface.h"
 
 /*
+ * This function writes inode no. of root node into file pointed by root_path.
+ */
+int bplus_tree_write_root_path(char *root_path, ino_t root_ino)
+{
+
+	int rc = EOK;
+
+	CHECK_RC_ASSERT((root_path == NULL), 0);
+
+	rc = write_file_contents(root_path,
+				 OPEN_FLAGS,
+				 WRITE_MODE,
+				 &root_ino,
+				 sizeof(ino_t));
+	CHECK_RC_ASSERT(rc, EOK);
+	return rc;
+
+}
+
+/*
+ * This function initializes b+ tree subsystem which involves following :
+ * 1. Create meta directory. This directory stores all the internal and leaf nodes.
+ * 2. Create and format root node of b+ tree.
+ * 3. If meta directory is already present, then don't create it. I believe it is a
+ *    request to reuse the existing b+ tree.
+ * 4. Pass force_init flag, which indicates to delete and to create meta directory.
+ * 5. Format meaning write a block_head data structure.
+ */
+int bplus_tree_init(char *meta_dir, char *root_path, bool force_init)
+{
+
+	int rc = EOK, rc1;
+	ino_t i_ino, meta_i_ino;
+	char *path;
+
+	CHECK_RC_ASSERT((meta_dir == NULL), 0);
+	CHECK_RC_ASSERT((root_path == NULL), 0);
+
+	rc = is_path_present(meta_dir, &meta_i_ino);
+
+	/*
+	 * If stat yields success and force_init is true, then delete the .meta.
+	 */
+	if (rc == EOK)
+	{
+
+		if (force_init == TRUE)
+		{
+
+			rc1 = bplus_tree_deinit(meta_dir);
+			if (rc1 != EOK)
+			{
+				return rc1;
+			}
+			rc = ENOENT;
+
+		}
+		else
+		{
+			return rc;
+		}
+
+	}
+	CHECK_RC_ASSERT(rc, ENOENT);
+
+	/*
+	 * By this time, .meta shouldn't be present. Now, create a meta directory.
+	 */
+	rc = mkdir(meta_dir, 0744);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	/*
+	 * Now, allocate a root node of the B+ tree under .meta.
+	 */
+	rc = bplus_tree_allocate_node_num(&i_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	path = (char *)malloc(MAX_PATH);
+	CHECK_RC_ASSERT((path == NULL), 0);
+	memset(path, 0, MAX_PATH);
+	snprintf(path, MAX_PATH, "%s/%d", META_DIR, (int)i_ino);
+
+	/*
+	 * Now, format the root node pointed by path. We will get inode no. of root.
+	 */
+	rc = bplus_tree_allocate_node(path, &i_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	/*
+	 * Write the inode no. in to root file.
+	 */
+	rc = bplus_tree_write_root_path(root_path, i_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	free(path);
+	return rc;
+
+}
+
+/*
+ * This function removes meta directory.
+ */
+int bplus_tree_deinit(char *meta_dir)
+{
+
+	int rc = EOK;
+	char cmd[20] = {0};
+
+	CHECK_RC_ASSERT((meta_dir == NULL), 0);
+	snprintf(cmd, 20, "rm -rf %s", meta_dir);
+	rc = system(cmd);
+	CHECK_RC_ASSERT(rc, EOK);
+	return rc;
+
+}
+
+/*
+ * This function does multiple things : 
+ * 1. Creates a file at path.
+ * 2. Does a stat on the file and returns inode number.
+ * 3. Formats a file to write block_head data structure into it.
+ */
+int bplus_tree_allocate_node(char *path, ino_t *i_ino)
+{
+
+	int rc = EOK;
+	struct stat *stat_buf = NULL;
+
+	CHECK_RC_ASSERT((i_ino == NULL), 0);
+	CHECK_RC_ASSERT((path == NULL), 0);
+
+	rc = bplus_tree_format_node(path);
+	CHECK_RC_ASSERT(rc, EOK);
+
+	stat_buf = (struct stat*)malloc(sizeof(struct stat));
+	CHECK_RC_ASSERT((stat_buf == NULL), 0);
+	memset(stat_buf, 0, sizeof(struct stat));
+
+	*i_ino = 0;
+	if (stat(path, stat_buf) == -1)
+	{
+
+		rc = errno;
+		free(stat_buf);
+		return rc;
+
+	}
+
+	*i_ino = stat_buf->st_ino;
+	free(stat_buf);
+
+	return rc;
+
+}
+
+/*
+ * This function does multiple things as follow :
+ * 1. It opens file to truncate the contents.
+ * 2. It writes out block_head with default values inside file.
+ */
+int bplus_tree_format_node(char *path)
+{
+
+	int rc = EOK;
+	block_head_st *block_head = NULL;
+	void *node;
+
+	/*
+	 * Allocate whole node of NODE_SIZE and write it on disk.
+	 */
+	node = (void *)malloc(NODE_SIZE);
+	CHECK_RC_ASSERT((node == NULL), 0);
+	memset(node, 0, NODE_SIZE);
+
+	block_head = node;
+	block_head->nr_items = 0;
+	block_head->free_space = NODE_SIZE - BLOCK_HEAD_SIZE;
+	block_head->level = BTREE_LEAF_LEVEL;
+	rc = write_file_contents(path, OPEN_FLAGS, OPEN_MODE, node, NODE_SIZE);
+
+	free(node);
+	return rc;
+
+}
+
+/*
+ * This function does following :
+ * 1. Does stat on path.
+ * 2. Copies st_ino into key->i_ino. 
+ */
+int bplus_form_key(char *path, b_plus_tree_key_t *key)
+{
+
+	int rc = EOK;
+	
+	CHECK_RC_ASSERT((path == NULL), 0);
+	CHECK_RC_ASSERT((key == NULL), 0);
+
+	memset(key, 0, KEY_SIZE);
+	rc = is_path_present(path, &(key->i_ino));
+	if (rc != EOK)
+	{
+		return rc;
+	}
+
+	return rc;
+
+}
+
+/*
+ * This is a generic binary search program.
+ */
+int bin_search(
+	void *buf,
+	b_plus_tree_key_t *key,
+	int16_t nr_items,
+	int *position,
+	bool is_leaf)
+{
+
+	int rc = ENOENT;
+	int start = 0;
+	int end = nr_items;
+	int i, mid;
+	b_plus_tree_key_t key_to_compare;
+	item_st *item;
+
+	*position = 0;
+
+	if (is_leaf == FALSE)
+	{
+		end = NR_KEYS(nr_items);
+	}
+
+	while (start <= end)
+	{
+
+		mid = (start + end) / (2);
+
+		if (is_leaf)
+		{
+
+			item = bplus_tree_get_item(buf, mid);
+			memcpy(&(key_to_compare.i_ino), &(item->i_ino), KEY_SIZE);
+
+		}
+		else
+		{
+
+			memcpy(&key_to_compare,
+				bplus_tree_get_key(buf, mid),
+				KEY_SIZE);
+
+		}
+
+		if (key_to_compare.i_ino > key->i_ino)
+		{
+			end = mid - 1;
+		}
+		else if (key_to_compare.i_ino < key->i_ino)
+		{
+			start = mid + 1;
+		}
+		else
+		{
+
+			rc = EEXIST;
+
+			/*
+			 * If it is internal node, right disk_child is located at 
+			 * 1 position ahead of key.
+			 */
+			if (is_leaf == TRUE)
+			{
+				*position = mid;
+			}
+			else
+			{
+				*position = mid + 1;
+			}
+			break;
+
+		}
+
+	}
+
+	if (rc != EEXIST)
+	{
+		*position = start;
+	}
+
+	return rc;
+
+}
+
+/*
  * This function returns pointer to block_head_t.
  */
 block_head_st *bplus_tree_get_block_head(void *buf)
@@ -2211,6 +2507,30 @@ void bplus_tree_simple_delete(bplus_tree_traverse_path_st *traverse_path)
 		bplus_tree_delete_item_pos0(traverse_path, leaf_node, FALSE);
 
 	}
+
+}
+
+/*
+ * This is driver function for rebalance of b+ tree.
+ */
+int bplus_tree_rebalance(char *root_path,
+			 bplus_tree_traverse_path_st *traverse_path,
+			 item_st *item,
+			 rebalnce_mode_et mode)
+{
+
+	int rc = EOK;
+
+	if (mode == BPLUS_INSERT)
+	{
+		rc = bplus_tree_rebalance_insert(root_path, traverse_path, item);
+	}
+	else
+	{
+		rc = bplus_tree_rebalance_delete(root_path, traverse_path);
+	}
+
+	return rc;
 
 }
 
