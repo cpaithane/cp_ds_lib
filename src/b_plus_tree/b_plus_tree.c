@@ -948,6 +948,226 @@ int bplus_tree_delete_handle_case2(bplus_tree_balance_st *tb)
 }
 
 /*
+ * This function is called from delete case_3_1. It returns child0 and child1.
+ */
+void bplus_tre_get_child_0_1(
+			bplus_tree_balance_st *tb,
+			void **child_node0,
+			void **child_node1,
+			char **new_root_node_path)
+{
+
+	int root_pos = 0;
+	bplus_tree_traverse_path_st *traverse_path = NULL;
+
+	traverse_path = tb->tb_path;
+	root_pos = bplus_tree_get_pos_path(traverse_path,
+					  (BTREE_LEAF_LEVEL + 2));
+	traverse_path = tb->tb_path;
+
+	if (root_pos == 0)
+	{
+
+		*child_node0 = bplus_tree_get_node_path(traverse_path,
+					  (BTREE_LEAF_LEVEL + 1));
+
+		*child_node1 = bplus_tree_get_right_sibling(tb,
+					  (BTREE_LEAF_LEVEL + 1));
+
+		*new_root_node_path = bplus_tree_get_pe_path_path(traverse_path,
+					  (BTREE_LEAF_LEVEL + 1));
+
+	}
+	else
+	{
+
+		*child_node1 = bplus_tree_get_node_path(traverse_path,
+					  (BTREE_LEAF_LEVEL + 1));
+
+		*child_node0 = bplus_tree_get_left_sibling(tb,
+					  (BTREE_LEAF_LEVEL + 1));
+
+		*new_root_node_path = bplus_tree_get_left_sibling_path(tb,
+					  (BTREE_LEAF_LEVEL + 1));
+
+	}
+
+}
+
+/*
+ * This function handles specific subcase in case3 where nr_items in root node is 3.
+ */
+int bplus_tree_delete_handle_case3_1(bplus_tree_balance_st *tb)
+{
+
+	int i, rc = EOK;
+	int root_pos = 0;
+	void *child_node0 = NULL;
+	void *child_node1 = NULL;
+	void *root_node = NULL;
+	void *leaf_node = NULL;
+	char *leaf_node_path = NULL;
+	char *new_root_node_path = NULL;
+	bplus_tree_traverse_path_st *traverse_path = NULL;
+	block_head_st *block_head_child0, *block_head_child1, *block_head_root;
+	block_head_st *block_head_leaf;
+	uint16_t nr_keys_child0, nr_keys_child1;
+	uint16_t nr_dc_child0, nr_dc_child1;
+	uint16_t nr_items_child0, nr_items_child1;
+	disk_child_st *dc = NULL;
+	item_st *tmp_item = NULL;
+	b_plus_tree_key_t key;
+	ino_t new_root_ino;
+
+	traverse_path = tb->tb_path;
+
+	/*
+	 * Lets figure out child0 and child1
+	 */
+	bplus_tre_get_child_0_1(tb, &child_node0, &child_node1, &new_root_node_path);
+
+	root_node = bplus_tree_get_node_path(traverse_path, (BTREE_LEAF_LEVEL + 2));
+	CHECK_RC_ASSERT((root_node == NULL), 0);
+	CHECK_RC_ASSERT((child_node0 == NULL), 0);
+	CHECK_RC_ASSERT((child_node1 == NULL), 0);
+
+	/*
+	 * Lets figure out whether both the children nodes could be merged.
+	 */
+	block_head_child0 = bplus_tree_get_block_head(child_node0);
+	block_head_child1 = bplus_tree_get_block_head(child_node1);
+
+	CHECK_RC_ASSERT((block_head_child0->level > BTREE_LEAF_LEVEL), 1);
+	CHECK_RC_ASSERT((block_head_child1->level > BTREE_LEAF_LEVEL), 1);
+
+	/*
+	 * If child0 and child1 are underflown, then merge them. Otherwise return.
+	 */
+	nr_items_child0 = block_head_child0->nr_items;
+	nr_items_child1 = block_head_child1->nr_items;
+	if ((nr_items_child0 + nr_items_child1) >= (MAX_KEYS + MAX_DC))
+	{
+		return rc;
+	}
+
+	/*
+	 * Read 0th dc of child1 and find out 0th item in this dc.
+	 */
+	leaf_node_path = (char *)malloc(MAX_PATH);
+	leaf_node = (void *)malloc(NODE_SIZE);
+	CHECK_RC_ASSERT((leaf_node_path == NULL), 0);
+	CHECK_RC_ASSERT((leaf_node == NULL), 0);
+
+	dc = bplus_tree_get_dc(child_node1, 0);
+	CHECK_RC_ASSERT((dc->i_ino > 0), 1);
+	rc = get_path(META_DIR, dc->i_ino, leaf_node_path);
+	CHECK_RC_ASSERT(rc, EOK);
+	rc = read_file_contents(leaf_node_path,
+				leaf_node,
+				READ_FLAGS,
+				READ_MODE,
+				NODE_SIZE);
+	CHECK_RC_ASSERT(rc, EOK);
+	block_head_leaf = bplus_tree_get_block_head(leaf_node);
+	CHECK_RC_ASSERT((block_head_leaf->level), BTREE_LEAF_LEVEL);
+	tmp_item = bplus_tree_get_item(leaf_node, 0);
+	CHECK_RC_ASSERT((tmp_item->i_ino > 0), 1);
+
+	/*
+	 * Lets mark the root node for deletion.
+	 */
+	block_head_root = bplus_tree_get_block_head(root_node);
+	bplus_tree_mark_for_delete(block_head_root);
+
+	nr_keys_child0 = NR_KEYS(nr_items_child0);
+	nr_keys_child1 = NR_KEYS(nr_items_child1);
+	nr_dc_child0 = nr_keys_child0 + 1;
+	nr_dc_child1 = nr_keys_child1 + 1;
+
+	/*
+	 * Punch the key of the item in child_node0 at proper location.
+	 */
+	memset(&key, 0, KEY_SIZE);
+	memcpy(&(key.i_ino), &(tmp_item->i_ino), sizeof(ino_t));
+	bplus_tree_punch_key(child_node0, &key, nr_keys_child0);
+	nr_keys_child0++;
+
+	/*
+	 * Lets flow all the keys and dc in one single node.
+	 */
+	for (i = 0; i < nr_keys_child1; i++)
+	{
+
+		rc = bplus_tree_flow_key(child_node1,
+					 child_node0,
+					 (i + 1),
+					 nr_keys_child0);
+		CHECK_RC_ASSERT(rc, EOK);
+		nr_keys_child0++;
+
+	}
+
+	for (i = 0; i < nr_dc_child1; i++)
+	{
+
+		rc = bplus_tree_flow_dc(child_node1,
+					child_node0,
+					i,
+					nr_dc_child0);
+		CHECK_RC_ASSERT(rc, EOK);
+		nr_dc_child0++;
+
+	}
+
+	/*
+	 * Now, adjust new root.
+	 */
+	rc = is_path_present(new_root_node_path, &new_root_ino);
+	CHECK_RC_ASSERT(rc, EOK);
+	bplus_tree_adjust_root(tb->tb_root_path, new_root_ino);
+
+	free(leaf_node_path);
+	free(leaf_node);
+	return rc;
+
+}
+
+/*
+ * This function handles a specific case in deletion where height of B+ tree is 2 or
+ * greater.
+ */
+int bplus_tree_delete_handle_case3(bplus_tree_balance_st *tb)
+{
+
+	int rc = EOK;
+	void *root_node = NULL;
+	bplus_tree_traverse_path_st *traverse_path = NULL;
+	block_head_st *block_head_root = NULL;
+	uint16_t nr_items_root = 0;
+	int root_pos = 0;
+
+	traverse_path = tb->tb_path;
+
+	CHECK_RC_ASSERT((traverse_path == NULL), 0);
+	CHECK_RC_ASSERT((traverse_path->path_length >= 2), 1);
+
+	root_node = bplus_tree_get_node_path(traverse_path, (BTREE_LEAF_LEVEL + 2));
+	CHECK_RC_ASSERT((root_node == NULL), 0);
+
+	block_head_root = bplus_tree_get_block_head(root_node);
+	nr_items_root = block_head_root->nr_items;
+	CHECK_RC_ASSERT((nr_items_root >= 3), 1);
+
+	if (nr_items_root == 3)
+	{
+		rc = bplus_tree_delete_handle_case3_1(tb);
+	}
+
+	return rc;
+
+}
+
+/*
  * This function is core deletion logic and handles every case of deletion.
  */
 int bplus_tree_rebalance_delete_handle(bplus_tree_balance_st *tb)
@@ -976,6 +1196,14 @@ int bplus_tree_rebalance_delete_handle(bplus_tree_balance_st *tb)
 	else
 	{
 		rc = bplus_tree_delete_handle_case2(tb);
+	}
+
+	/*
+	 * If height of B+ tree is 2 or greater, then handle this scenario.
+	 */
+	if (traverse_path->path_length >= 2)
+	{
+		rc = bplus_tree_delete_handle_case3(tb);
 	}
 
 	return rc;

@@ -409,6 +409,16 @@ int bplus_tree_delete_key(bplus_tree_balance_st *tb, flow_mode_et mode)
 	if (nr_keys_par == 1)
 	{
 
+		/*
+		 * If height is greater than or equal to 2, root should not be
+		 * changed.
+		 */
+		if (tb->tb_path->path_length >= 2)
+		{
+			return rc;
+		}
+
+		CHECK_RC_ASSERT(tb->tb_path->path_length <= (BTREE_LEAF_LEVEL+1), 1);
 		CHECK_RC_ASSERT(block_head_par->nr_items, 3);
 
 		new_root_node_path = bplus_tree_get_pe_path_path(tb->tb_path,
@@ -420,8 +430,10 @@ int bplus_tree_delete_key(bplus_tree_balance_st *tb, flow_mode_et mode)
 		 */
 		if (mode == NODE_TO_LEFT_SIB)
 		{
+
 			new_root_node_path = bplus_tree_get_left_sibling_path(tb,
 							BTREE_LEAF_LEVEL);
+
 		}
 
 		rc = is_path_present(new_root_node_path, &new_root_ino);
@@ -1469,6 +1481,7 @@ int bplus_tree_flow_key(void *src, void *dest, int nr_keys_src, int nr_keys_dest
 	dest_key = bplus_tree_get_key(dest, i);
 	CHECK_RC_ASSERT(dest_key->i_ino, 0);
 	memcpy(dest_key, src_key, KEY_SIZE);
+	memset(src_key, 0x0, KEY_SIZE);
 
 	/*
 	 * Adjust counters.

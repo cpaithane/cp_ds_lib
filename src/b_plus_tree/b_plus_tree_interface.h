@@ -234,5 +234,13 @@ void *bplus_tree_get_left_sibling_path(bplus_tree_balance_st *tb, uint8_t level)
 void *bplus_tree_get_right_sibling(bplus_tree_balance_st *tb, uint8_t level);
 int bplus_tree_delete_handle_case1(bplus_tree_balance_st *tb);
 int bplus_tree_delete_handle_case2(bplus_tree_balance_st *tb);
+int bplus_tree_delete_handle_case3(bplus_tree_balance_st *tb);
+int bplus_tree_delete_handle_case3_1(bplus_tree_balance_st *tb);
+void bplus_tre_get_child_0_1(
+                         bplus_tree_balance_st *tb,
+                         void **child_node0,
+                         void **child_node1,
+                         char **new_root_node_path);
+
 int bplus_tree_delete_key(bplus_tree_balance_st *tb, flow_mode_et flow_mode);
 

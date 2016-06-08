@@ -1,7 +1,7 @@
 #include "b_plus_tree_interface.h"
 
 #define DATA ".data\0"
-#define MAX_INPUT_ITEMS 16380
+#define MAX_INPUT_ITEMS 16520
 
 /*
  * This function forms a file name using iterator. Strictly, used for unit test 
