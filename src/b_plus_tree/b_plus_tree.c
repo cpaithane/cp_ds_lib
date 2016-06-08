@@ -9,31 +9,18 @@
 
 /*
  * This function does following :
- * 1. Calculate key based on path.
- * 2. Search the key in the b+ tree rooted at root_path.
- * 3. If key found in the b+ tree, delete the key.
+ * 1. Search the key in the b+ tree rooted at root_path.
+ * 2. If key found in the b+ tree, delete the key.
  */
-int bplus_tree_delete(char *root_path, char *path)
+int bplus_tree_delete(char *root_path, b_plus_tree_key_t *key)
 {
 
 	int rc = EOK;
-	b_plus_tree_key_t *key = NULL;
 	bplus_tree_traverse_path_st *traverse_path = NULL;
 	item_st *item = NULL;
 
 	CHECK_RC_ASSERT((root_path == NULL), 0);
-	CHECK_RC_ASSERT((path == NULL), 0);
-
-	key = (b_plus_tree_key_t*)malloc(KEY_SIZE);
 	CHECK_RC_ASSERT((key == NULL), 0);
-
-	rc = bplus_form_key(path, key);
-	if (rc != EOK)
-	{
-
-		free(key);
-		return rc;
-	}
 
 	traverse_path = (bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
 	CHECK_RC_ASSERT((traverse_path == NULL), 0);
@@ -44,7 +31,6 @@ int bplus_tree_delete(char *root_path, char *path)
 	if (rc == ENOENT)
 	{
 
-		free(key);
 		bplus_tree_free_traverse_path(traverse_path);
 		return rc;
 
@@ -54,7 +40,6 @@ int bplus_tree_delete(char *root_path, char *path)
 	if (rc != EOK)
 	{
 
-		free(key);
 		bplus_tree_free_traverse_path(traverse_path);
 		return rc;
 
@@ -64,13 +49,11 @@ int bplus_tree_delete(char *root_path, char *path)
 	if (rc != EOK)
 	{
 
-		free(key);
 		bplus_tree_free_traverse_path(traverse_path);
 		return rc;
 
 	}
 
-	free(key);
 	bplus_tree_free_traverse_path(traverse_path);
 	return rc;
 
@@ -78,32 +61,18 @@ int bplus_tree_delete(char *root_path, char *path)
 
 /*
  * This function does following : 
- * 1. Calculate unique key based on the path.
- * 2. Search the key into b+ tree rooted at root_path.
- * 3. Insert the key and inode no. of the object pointed by path in b+ tree.
+ * 1. Search the key into b+ tree rooted at root_path.
+ * 2. Insert the key and inode no. of the object pointed by path in b+ tree.
  */
-int bplus_tree_insert(char *root_path, char *path)
+int bplus_tree_insert(char *root_path, b_plus_tree_key_t *key)
 {
 
 	int rc = EOK;
-	b_plus_tree_key_t *key = NULL;
 	bplus_tree_traverse_path_st *traverse_path = NULL;
 	item_st *item = NULL;
 
 	CHECK_RC_ASSERT((root_path == NULL), 0);
-	CHECK_RC_ASSERT((path == NULL), 0);
-
-	key = (b_plus_tree_key_t*)malloc(KEY_SIZE);
 	CHECK_RC_ASSERT((key == NULL), 0);
-
-	rc = bplus_form_key(path, key);
-	if (rc != EOK)
-	{
-
-		free(key);
-		return rc;
-
-	}
 
 	traverse_path = (bplus_tree_traverse_path_st *)malloc(TRAVERSE_PATH_SIZE);
 	CHECK_RC_ASSERT((traverse_path == NULL), 0);
@@ -114,7 +83,6 @@ int bplus_tree_insert(char *root_path, char *path)
 	if (rc == EEXIST)
 	{
 
-		free(key);
 		bplus_tree_free_traverse_path(traverse_path);
 		return rc;
 
@@ -129,7 +97,6 @@ int bplus_tree_insert(char *root_path, char *path)
 	{
 
 		free(item);
-		free(key);
 		bplus_tree_free_traverse_path(traverse_path);
 		return rc;
 
@@ -140,14 +107,12 @@ int bplus_tree_insert(char *root_path, char *path)
 	{
 
 		free(item);
-		free(key);
 		bplus_tree_free_traverse_path(traverse_path);
 		return rc;
 
 	}
 
 	free(item);
-	free(key);
 	bplus_tree_free_traverse_path(traverse_path);
 	return rc;
 

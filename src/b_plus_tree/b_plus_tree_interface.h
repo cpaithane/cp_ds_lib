@@ -175,7 +175,7 @@ int bplus_tree_flow_item(void *src, void *dest, int src_pos);
 /*
  * Insert APIs
  */
-int bplus_tree_insert(char *root_path, char *path);
+int bplus_tree_insert(char *root_path, b_plus_tree_key_t *key);
 void bplus_tree_init_internal_node(void *new_internal_node,
                                    b_plus_tree_key_t *key,
                                    disk_child_st *dc0,
@@ -235,7 +235,7 @@ int bplus_tree_rebalance_insert(char *root_path,
 int bplus_tree_delete_item(char *root_path,
 			   bplus_tree_traverse_path_st *traverse_path);
 
-int bplus_tree_delete(char *root_path, char *path);
+int bplus_tree_delete(char *root_path, b_plus_tree_key_t *key);
 
 int bplus_tree_rebalance_delete(char *root_path,
 				bplus_tree_traverse_path_st *traverse_path);

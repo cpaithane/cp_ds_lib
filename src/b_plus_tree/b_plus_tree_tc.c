@@ -75,9 +75,9 @@ int bplus_tree_tc_insert_handle(int i)
 	memset(key, 0, KEY_SIZE);
 
 	get_file_name(file_name, i);
-	rc = bplus_tree_insert(ROOT, file_name);
-	CHECK_RC_ASSERT(rc, EOK);
 	rc = bplus_form_key(file_name, key);
+	CHECK_RC_ASSERT(rc, EOK);
+	rc = bplus_tree_insert(ROOT, key);
 	CHECK_RC_ASSERT(rc, EOK);
 
 	traverse_path =
@@ -216,7 +216,7 @@ int bplus_tree_tc_delete_handle(int i)
 	rc = bplus_form_key(file_name, key);
 	CHECK_RC_ASSERT(rc, EOK);
 
-	rc = bplus_tree_delete(ROOT, file_name);
+	rc = bplus_tree_delete(ROOT, key);
 	CHECK_RC_ASSERT(rc, EOK);
 
 	traverse_path =
