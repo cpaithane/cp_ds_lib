@@ -99,4 +99,5 @@ int heap_tc_execute();
 int graph_tc_execute();
 int trie_tc_execute();
 int bplus_tc_execute();
+int rb_tree_tc_execute();
 

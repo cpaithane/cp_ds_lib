@@ -1,0 +1,28 @@
+What is Red-Black tree?
+
+1. Root of the tree should be black.
+2. Every null leaf node is black.
+3. Every node to be inserted is red.
+4. Every path must have same no. of black nodes.
+
+=============
+
+APIs to consider : 
+
+1. get_uncle_node of a given node.
+2. 
+
+=============
+
+Insertion Violations cases : 
+
+1. Case 1 : 
+2. Case 2 :
+3. Case 3 :
+
+============
+
+Plan to implement : 
+
+1. Lets extend the BST code. Lets have parent associated with every node.
+

@@ -60,6 +60,10 @@ int cp_ds_lib_execute(char *str)
 	{
 		rc = bplus_tc_execute();
 	}
+	else if (strcmp(str, "rb_tree") == 0)
+	{
+		rc = rb_tree_tc_execute();
+	}
 	else
 	{
 		CHECK_RC_ASSERT(1, 0);
