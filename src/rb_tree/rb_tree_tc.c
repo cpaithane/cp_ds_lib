@@ -10,7 +10,6 @@ int rb_tree_test_case1()
 
 	int rc = EOK;
 	int i;
-	int data[7] = {100, 10, 200, 20, 400, 30, 600};
 
 	for (i = 0; i < 7; i++)
 	{
@@ -37,7 +36,6 @@ int rb_tree_test_case2()
 
 	int rc = EOK;
 	int i;
-	int data[7] = {100, 10, 200, 20, 400, 30, 600};
 
 	for (i = 10; i > 0; i--)
 	{
@@ -89,6 +87,8 @@ int rb_tree_test_case3()
 	return rc;
 
 }
+
+#ifdef DELETE_SUPPORT
 
 /*
  * This test case tests deletion of leaf node.
@@ -297,18 +297,24 @@ int rb_tree_test_case8()
 
 }
 
+#endif
+
 int rb_tree_tc_execute()
 {
 
 	int rc = EOK;
-	rc = bst_test_case1();
-	rc = bst_test_case2();
-	rc = bst_test_case3();
-	rc = bst_test_case4();
-	rc = bst_test_case5();
-	rc = bst_test_case6();
-	rc = bst_test_case7();
-	rc = bst_test_case8();
+	rc = rb_tree_test_case1();
+	rc = rb_tree_test_case2();
+	rc = rb_tree_test_case3();
+
+#ifdef DELETE_SUPPORT
+	rc = rb_tree_test_case4();
+	rc = rb_tree_test_case5();
+	rc = rb_tree_test_case6();
+	rc = rb_tree_test_case7();
+	rc = rb_tree_test_case8();
+#endif
+
 	return rc;
 
 }

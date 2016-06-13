@@ -81,7 +81,8 @@ rb_tree_st *rb_tree_insert(rb_tree_st *root,
 
 		/*
 		 * If global root node of RB tree is NULL, then it is first node 
-		 * allocation.
+		 * allocation. Parent of the root will be NULL. So, no need to do
+		 * something special for rb_tree_root.
 		 */
 		if (rb_tree_root == NULL)
 		{
@@ -95,9 +96,10 @@ rb_tree_st *rb_tree_insert(rb_tree_st *root,
 	rc = compare(data, root->rb_tree_data);
 
 	/*
-	 * If data to be inserted is greater, then look into right subtree. Else, look into
-	 * left subtree.
+	 * If data to be inserted is greater, then look into right subtree. Else,
+	 * look into left subtree.
 	 * As per property of BST, no two identical nodes present in BST.
+	 * Assign proper parent.
 	 */
 	if (rc == FIRST_GREATER)
 	{
@@ -106,6 +108,8 @@ rb_tree_st *rb_tree_insert(rb_tree_st *root,
 						root->rb_tree_right, 
 						data, len, 
 						compare);
+		CHECK_RC_ASSERT((root->rb_tree_right == NULL), 0);
+		root->rb_tree_right->rb_tree_parent = root;
 
 	}
 	else if (rc == FIRST_LESS)
@@ -115,6 +119,8 @@ rb_tree_st *rb_tree_insert(rb_tree_st *root,
 						root->rb_tree_left,
 						data, len,
 						compare);
+		CHECK_RC_ASSERT((root->rb_tree_left == NULL), 0);
+		root->rb_tree_left->rb_tree_parent = root;
 
 	}
 	else
@@ -427,18 +433,44 @@ rb_tree_st *rb_tree_delete_node(rb_tree_st *root,
 }
 
 /*
+ * This function returns pointer to parent node.
+ * rb_tree_root doesn't have parent_node. So, this will return NULL.
+ * For every other node, it should will return non-NULL value.
+ */
+rb_tree_st *rb_tree_get_parent(const rb_tree_st *node)
+{
+
+	rb_tree_st *parent_node = NULL;
+
+	if (node != NULL)
+	{
+		parent_node = node->rb_tree_parent;
+	}
+
+	return parent_node;
+
+}
+
+/*
  * This function prints integer data inside node
  */
 void rb_tree_int_node_printer(const rb_tree_st *node)
 {
 
 	int *data;
+	rb_tree_st *parent = NULL;
+
 	printf("\n");
 	if (node)
 	{
 
 		data = (int *)node->rb_tree_data;
-		printf("%d\t", *data);
+		printf("node %d\t", *data);
+		parent = rb_tree_get_parent(node);
+		if (parent)
+		{
+			printf("parent %d", *(int*)(parent->rb_tree_data));
+		}
 
 	}
 	printf("\n");

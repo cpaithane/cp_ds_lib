@@ -62,3 +62,5 @@ void rb_tree_destroy_tree(rb_tree_st *root);
 
 void rb_tree_int_node_printer(const rb_tree_st *node);
 
+rb_tree_st *rb_tree_get_parent(const rb_tree_st *node);
+
