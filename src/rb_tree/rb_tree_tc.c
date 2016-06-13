@@ -2,8 +2,6 @@
 
 extern rb_tree_st *rb_tree_root;
 
-#ifdef SUPPORT
-
 /*
  * This test case tests insertion with 7 nodes in rightmost side.
  */
@@ -22,10 +20,10 @@ int rb_tree_test_case1()
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
-	bst_destroy_tree(bst_root);
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
+	rb_tree_destroy_tree(rb_tree_root);
+	rb_tree_root = NULL;
+	CHECK_RC_ASSERT(rb_tree_root, NULL);
 
 	return rc;
 
@@ -53,10 +51,10 @@ int rb_tree_test_case2()
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
-	bst_destroy_tree(bst_root);
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
+	rb_tree_destroy_tree(rb_tree_root);
+	rb_tree_root = NULL;
+	CHECK_RC_ASSERT(rb_tree_root, NULL);
 
 	return rc;
 
@@ -84,10 +82,9 @@ int rb_tree_test_case3()
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
-	bst_destroy_tree(bst_root);
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
+	rb_tree_destroy_tree(rb_tree_root);
+	rb_tree_root = NULL;
 
 	return rc;
 
@@ -113,19 +110,20 @@ int rb_tree_test_case4()
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	for (i = 6; i >= 0; i--)
 	{
 
-		bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+		rb_tree_delete_node(rb_tree_root, &i,
+				    sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
-		bst_inorder_traversal(bst_root, bst_int_node_printer);
+		rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	}
 
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	rb_tree_root = NULL;
+	CHECK_RC_ASSERT(rb_tree_root, NULL);
 	return rc;
 
 }
@@ -149,19 +147,20 @@ int rb_tree_test_case5()
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	for (i = 1; i < 8; i++)
 	{
 
-		bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+		rb_tree_delete_node(rb_tree_root, &i,
+				    sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
-		bst_inorder_traversal(bst_root, bst_int_node_printer);
+		rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	}
 
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	rb_tree_root = NULL;
+	CHECK_RC_ASSERT(rb_tree_root, NULL);
 
 	return EOK;
 
@@ -187,28 +186,30 @@ int rb_tree_test_case6()
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	for (i = 1; i < 6; i++)
 	{
 
-		bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+		rb_tree_delete_node(rb_tree_root, &i,
+				    sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
-		bst_inorder_traversal(bst_root, bst_int_node_printer);
+		rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	}
 
 	i = 0;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	rb_tree_delete_node(rb_tree_root, &i,
+			    sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	i = 6;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	rb_tree_delete_node(rb_tree_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
-	bst_root = NULL;
+	rb_tree_root = NULL;
 	return EOK;
 
 }
@@ -234,28 +235,29 @@ int rb_tree_test_case7()
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	for (i = 6; i > 1; i--)
 	{
 
-		bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+		rb_tree_delete_node(rb_tree_root, &i,
+				    sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
-		bst_inorder_traversal(bst_root, bst_int_node_printer);
+		rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	}
 
 	i = 7;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	rb_tree_delete_node(rb_tree_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	i = 1;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	rb_tree_delete_node(rb_tree_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
-	bst_root = NULL;
+	rb_tree_root = NULL;
 	return EOK;
 
 }
@@ -281,27 +283,24 @@ int rb_tree_test_case8()
 
 	}
 
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	i = 5;
-	bst_delete_node(bst_root, &i, sizeof(int), bst_int_data_compare);
+	rb_tree_delete_node(rb_tree_root, &i, sizeof(int), common_int_data_compare);
 	printf("After deleting %d\n", i);
-	bst_inorder_traversal(bst_root, bst_int_node_printer);
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
-	bst_destroy_tree(bst_root);
-	bst_root = NULL;
-	CHECK_RC_ASSERT(bst_root, NULL);
+	rb_tree_destroy_tree(rb_tree_root);
+	rb_tree_root = NULL;
+	CHECK_RC_ASSERT(rb_tree_root, NULL);
 	return EOK;
 
 }
-
-#endif
 
 int rb_tree_tc_execute()
 {
 
 	int rc = EOK;
-/*
 	rc = bst_test_case1();
 	rc = bst_test_case2();
 	rc = bst_test_case3();
@@ -310,7 +309,6 @@ int rb_tree_tc_execute()
 	rc = bst_test_case6();
 	rc = bst_test_case7();
 	rc = bst_test_case8();
-*/
 	return rc;
 
 }

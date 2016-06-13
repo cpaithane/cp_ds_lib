@@ -161,15 +161,14 @@ void rb_tree_inorder_traversal(
 
 }
 
-#ifdef SUPPORT
 /*
- * This function traverses BST till it reaches data uses compare function.
+ * This function traverses RBTree till it reaches data uses compare function.
  */
-int bst_traverse_bst(bst_st *root, 
-		     bst_st **parent, 
-		     bst_st **node, 
+int rb_tree_traverse_bst(rb_tree_st *root, 
+		     rb_tree_st **parent, 
+		     rb_tree_st **node, 
 		     void *data, 
-		     bst_data_compare_t compare)
+		     common_data_compare_t compare)
 {
 
 	int rc = EOK;
@@ -181,12 +180,12 @@ int bst_traverse_bst(bst_st *root,
 		return ENOENT;
 	}
 
-	rc = compare(root->bst_data, data);
+	rc = compare(root->rb_tree_data, data);
 	if (rc == FIRST_GREATER)
 	{
 
 		*parent = root;
-		return (bst_traverse_bst(root->bst_left,
+		return (rb_tree_traverse_bst(root->rb_tree_left,
 				 parent, 
 				 node, 
 				 data, compare));
@@ -196,7 +195,7 @@ int bst_traverse_bst(bst_st *root,
 	{
 
 		*parent = root;
-		return (bst_traverse_bst(root->bst_right,
+		return (rb_tree_traverse_bst(root->rb_tree_right,
 				 parent, 
 				 node, 
 				 data, compare));
@@ -215,16 +214,18 @@ int bst_traverse_bst(bst_st *root,
 /*
  * This function deletes leaf nodes of BST
  */
-bst_st *bst_delete_node_1(bst_st *root, bst_st *parent, bst_st *node_to_delete)
+rb_tree_st *rb_tree_delete_node_1(rb_tree_st *root,
+				  rb_tree_st *parent,
+				  rb_tree_st *node_to_delete)
 {
 
 	/*
 	 * If it is root node, return root as NULL.
 	 */
-	if (node_to_delete == bst_root)
+	if (node_to_delete == rb_tree_root)
 	{
 
-		bst_root = NULL;
+		rb_tree_root = NULL;
 		root = NULL;
 
 	}
@@ -234,12 +235,12 @@ bst_st *bst_delete_node_1(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 	else
 	{
 
-		parent->bst_left = NULL;
-		parent->bst_right = NULL;
+		parent->rb_tree_left = NULL;
+		parent->rb_tree_right = NULL;
 
 	}
 
-	bst_dealloc_node(&node_to_delete);
+	rb_tree_dealloc_node(&node_to_delete);
 	return root;
 
 }
@@ -247,28 +248,30 @@ bst_st *bst_delete_node_1(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 /*
  * This function deletes a node which has either left child or right child.
  */
-bst_st *bst_delete_node_2(bst_st *root, bst_st *parent, bst_st *node_to_delete)
+rb_tree_st *rb_tree_delete_node_2(rb_tree_st *root,
+				  rb_tree_st *parent,
+				  rb_tree_st *node_to_delete)
 {
 
-	int is_left = (node_to_delete->bst_left != NULL ? 1 : 0);
+	int is_left = (node_to_delete->rb_tree_left != NULL ? 1 : 0);
 
 	/*
 	 * If deletion is for root. That means, parent is NULL.
 	 */
-	if (node_to_delete == bst_root)
+	if (node_to_delete == rb_tree_root)
 	{
 
 		if (is_left)
 		{
-			bst_root = node_to_delete->bst_left;
+			rb_tree_root = node_to_delete->rb_tree_left;
 		}
 		else
 		{
-			bst_root = node_to_delete->bst_right;
+			rb_tree_root = node_to_delete->rb_tree_right;
 		}
 
-		bst_dealloc_node(&node_to_delete);
-		return bst_root;
+		rb_tree_dealloc_node(&node_to_delete);
+		return rb_tree_root;
 
 	}
 
@@ -280,14 +283,14 @@ bst_st *bst_delete_node_2(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 
 	if (is_left)
 	{
-		parent->bst_left = node_to_delete->bst_left;
+		parent->rb_tree_left = node_to_delete->rb_tree_left;
 	}
 	else
 	{
-		parent->bst_right = node_to_delete->bst_right;
+		parent->rb_tree_right = node_to_delete->rb_tree_right;
 	}
 
-	bst_dealloc_node(&node_to_delete);
+	rb_tree_dealloc_node(&node_to_delete);
 	return root;
 
 }
@@ -295,22 +298,25 @@ bst_st *bst_delete_node_2(bst_st *root, bst_st *parent, bst_st *node_to_delete)
 /*
  * This function deletes a node which has both the children.
  */
-bst_st *bst_delete_node_3(bst_st *root, bst_st *parent, bst_st *node_to_delete, size_t len)
+rb_tree_st *rb_tree_delete_node_3(rb_tree_st *root,
+				  rb_tree_st *parent,
+				  rb_tree_st *node_to_delete,
+				  size_t len)
 {
 
-	bst_st *in_suc = NULL;
-	bst_st *father_of_in_suc = NULL;
-	bst_st *father_of_right_subtree = node_to_delete;
-	bst_st *right_subtree = node_to_delete->bst_right;
+	rb_tree_st *in_suc = NULL;
+	rb_tree_st *father_of_in_suc = NULL;
+	rb_tree_st *father_of_right_subtree = node_to_delete;
+	rb_tree_st *right_subtree = node_to_delete->rb_tree_right;
 
 	/*
 	 * Find out first inorder successor of the node to be deleted.
 	 */
-	while (right_subtree->bst_left != NULL)
+	while (right_subtree->rb_tree_left != NULL)
 	{
 
 		father_of_right_subtree = right_subtree;
-		right_subtree = right_subtree->bst_left;
+		right_subtree = right_subtree->rb_tree_left;
 
 	}
 
@@ -323,7 +329,7 @@ bst_st *bst_delete_node_3(bst_st *root, bst_st *parent, bst_st *node_to_delete, 
 	 * Now, swap the contents of inorder successor and 
 	 * node to be deleted.
 	 */
-	memcpy(node_to_delete->bst_data, in_suc->bst_data, len);
+	memcpy(node_to_delete->rb_tree_data, in_suc->rb_tree_data, len);
 
 	/*
 	 * Inorder successor can have right subtree.
@@ -331,17 +337,17 @@ bst_st *bst_delete_node_3(bst_st *root, bst_st *parent, bst_st *node_to_delete, 
 	 */
 	if (father_of_in_suc != node_to_delete)
 	{
-		node_to_delete->bst_left = in_suc->bst_right;
+		node_to_delete->rb_tree_left = in_suc->rb_tree_right;
 	}
 	else
 	{
-		node_to_delete->bst_right = in_suc->bst_right;
+		node_to_delete->rb_tree_right = in_suc->rb_tree_right;
 	}
 
 	/*
 	 * Delete the node pointed by inorder predecessor.
 	 */
-	bst_dealloc_node(&in_suc);
+	rb_tree_dealloc_node(&in_suc);
 
 	return root;
 
@@ -350,22 +356,22 @@ bst_st *bst_delete_node_3(bst_st *root, bst_st *parent, bst_st *node_to_delete, 
 /*
  * This function deletes the node which contains specified value
  */
-bst_st *bst_delete_node(bst_st *root, 
-			void *data, 
-			size_t len, 
-			bst_data_compare_t compare)
+rb_tree_st *rb_tree_delete_node(rb_tree_st *root,
+				void *data,
+				size_t len,
+				common_data_compare_t compare)
 {
 
-	bst_st *node_to_delete = NULL;
-	bst_st *parent = NULL;
+	rb_tree_st *node_to_delete = NULL;
+	rb_tree_st *parent = NULL;
 
 	/*
 	 * First traverse to the node of deletion.
 	 */
-	bst_traverse_bst(root, &parent, &node_to_delete, data, compare);
+	rb_tree_traverse_bst(root, &parent, &node_to_delete, data, compare);
 
 	CHECK_RC_ASSERT((node_to_delete == NULL), 0);
-	if (root != bst_root)
+	if (root != rb_tree_root)
 	{
 		CHECK_RC_ASSERT((parent == NULL), 0);
 	}
@@ -380,11 +386,11 @@ bst_st *bst_delete_node(bst_st *root,
 	/*
 	 * Case 1 of deletion
 	 */
-	if ((node_to_delete->bst_left == NULL) && 
-	    (node_to_delete->bst_right == NULL))
+	if ((node_to_delete->rb_tree_left == NULL) && 
+	    (node_to_delete->rb_tree_right == NULL))
 	{
 
-		root = bst_delete_node_1(root, parent, node_to_delete);
+		root = rb_tree_delete_node_1(root, parent, node_to_delete);
 		return root;
 
 	}
@@ -392,11 +398,11 @@ bst_st *bst_delete_node(bst_st *root,
 	/*
 	 * Case 2 of deletion
 	 */
-	if ((node_to_delete->bst_left == NULL) || 
-	    (node_to_delete->bst_right == NULL))
+	if ((node_to_delete->rb_tree_left == NULL) || 
+	    (node_to_delete->rb_tree_right == NULL))
 	{
 
-		root = bst_delete_node_2(root, parent, node_to_delete);
+		root = rb_tree_delete_node_2(root, parent, node_to_delete);
 		return root;
 
 	}
@@ -404,11 +410,11 @@ bst_st *bst_delete_node(bst_st *root,
 	/*
 	 * Case 3 of deletion
 	 */
-	if ((node_to_delete->bst_left) && 
-	    (node_to_delete->bst_right))
+	if ((node_to_delete->rb_tree_left) && 
+	    (node_to_delete->rb_tree_right))
 	{
 
-		root = bst_delete_node_3(root, parent, node_to_delete, len);
+		root = rb_tree_delete_node_3(root, parent, node_to_delete, len);
 		return root;
 
 	}
@@ -420,7 +426,6 @@ bst_st *bst_delete_node(bst_st *root,
 
 }
 
-#endif
 /*
  * This function prints integer data inside node
  */
