@@ -1,6 +1,7 @@
 #include "rb_tree.h"
 
 extern rb_tree_st *rb_tree_root;
+extern max_nr_nodes;
 
 /*
  * This test case tests insertion with 50 nodes in rightmost side.
@@ -12,6 +13,7 @@ int rb_tree_test_case1()
 	int rc = EOK;
 	int i;
 
+	max_nr_nodes = 50;
 	for (i = 0; i < 50; i++)
 	{
 
@@ -41,6 +43,7 @@ int rb_tree_test_case2()
 	int rc = EOK;
 	int i;
 
+	max_nr_nodes = 0;
 	for (i = 50; i > 0; i--)
 	{
 
@@ -50,6 +53,7 @@ int rb_tree_test_case2()
 				sizeof(int),
 				common_int_data_compare);
 		CHECK_RC_ASSERT((rb_tree_root == NULL), 0);
+		max_nr_nodes++;
 
 	}
 
@@ -75,6 +79,7 @@ int rb_tree_test_case3()
 	{10, 1000, 20, 2000, 30, 3000, 40, 4000, 50, 5000, 60, 
 	6000, 70, 7000, 80, 8000};
 
+	max_nr_nodes = 16;
 	for (i = 0; i < 16; i++)
 	{
 

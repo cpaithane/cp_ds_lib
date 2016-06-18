@@ -42,7 +42,7 @@ typedef enum rb_tree_rot_mode
 	color;			\
 })
 
-typedef void (*rb_tree_node_printer_t)(const rb_tree_st *node);
+typedef void (*rb_tree_node_printer_t)(const rb_tree_st *node, uint32_t *nr_nodes);
 
 /*
  * APIs to use rb_tree
@@ -63,6 +63,10 @@ rb_tree_st *rb_tree_insert_internal(rb_tree_st *root,
                                     common_data_compare_t compare,
                                     int *rc);
 
+void rb_tree_inorder_traversal_internal(
+                        rb_tree_st *root,
+                        uint32_t *nr_nodes,
+                        rb_tree_node_printer_t rb_tree_node_printer);
 void bst_inorder_traversal(
 			rb_tree_st *root,
 			rb_tree_node_printer_t rb_tree_node_printer);
@@ -95,7 +99,7 @@ rb_tree_st *rb_tree_delete_node(rb_tree_st *root,
 
 void rb_tree_destroy_tree(rb_tree_st *root);
 
-void rb_tree_int_node_printer(const rb_tree_st *node);
+void rb_tree_int_node_printer(const rb_tree_st *node, uint32_t *nr_nodes);
 
 rb_tree_st *rb_tree_get_parent(const rb_tree_st *node);
 rb_tree_st *rb_tree_get_grand_parent(const rb_tree_st *node);

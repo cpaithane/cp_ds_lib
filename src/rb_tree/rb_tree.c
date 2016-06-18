@@ -6,6 +6,12 @@
 rb_tree_st *rb_tree_root = NULL;
 
 /*
+ * Solely for testing purpose.
+ */
+uint32_t max_nr_nodes;
+uint32_t nr_root;
+
+/*
  * This function initializes node, pointers etc.
  */
 void rb_tree_initialize_node(rb_tree_st *node, void *data, size_t len)
@@ -51,10 +57,25 @@ void rb_tree_dealloc_node(rb_tree_st **nodep)
 }
 
 /*
+ * Workhorse function for inorder traversal.
+ */
+void rb_tree_inorder_traversal(rb_tree_st *root,
+			rb_tree_node_printer_t rb_tree_node_printer)
+{
+
+	uint32_t nr_nodes = 0;
+	nr_root = 0;
+	rb_tree_inorder_traversal_internal(root, &nr_nodes, rb_tree_node_printer);
+	CHECK_RC_ASSERT(nr_nodes, max_nr_nodes);
+
+}
+
+/*
  * This function does inorder traversal of RBTree and validates the node.
  */
-void rb_tree_inorder_traversal(
+void rb_tree_inorder_traversal_internal(
 			rb_tree_st *root,
+			uint32_t *nr_nodes,
 			rb_tree_node_printer_t rb_tree_node_printer)
 {
 
@@ -71,17 +92,23 @@ void rb_tree_inorder_traversal(
 	/*
 	 * traverse to the left subtree
 	 */
-	rb_tree_inorder_traversal(root->rb_tree_left, rb_tree_node_printer);
+	rb_tree_inorder_traversal_internal(
+		root->rb_tree_left,
+		nr_nodes,
+		rb_tree_node_printer);
 
 	/*
 	 * print the node.
 	 */
-	rb_tree_node_printer(root);
+	rb_tree_node_printer(root, nr_nodes);
 
 	/*
 	 * traverse to the right subtree
 	 */
-	rb_tree_inorder_traversal(root->rb_tree_right, rb_tree_node_printer);
+	rb_tree_inorder_traversal_internal(
+		root->rb_tree_right,
+		nr_nodes,
+		rb_tree_node_printer);
 
 }
 
@@ -113,6 +140,7 @@ void rb_tree_validate_node(rb_tree_st *root)
 		par_node = rb_tree_get_parent(root);
 		par_color = RB_TREE_GET_NODE_COLOR(par_node);
 		CHECK_RC_ASSERT(par_color, BLACK);
+		CHECK_RC_ASSERT((par_node == root), 0);
 
 	}
 
@@ -454,7 +482,7 @@ rb_tree_st *rb_tree_get_uncle(const rb_tree_st *node, common_data_compare_t comp
 /*
  * This function prints integer data inside node
  */
-void rb_tree_int_node_printer(const rb_tree_st *node)
+void rb_tree_int_node_printer(const rb_tree_st *node, uint32_t *nr_nodes)
 {
 
 	int *data;
@@ -472,6 +500,15 @@ void rb_tree_int_node_printer(const rb_tree_st *node)
 		{
 			printf("parent %d", *(int*)(parent->rb_tree_data));
 		}
+		else
+		{
+
+			nr_root += 1;
+			CHECK_RC_ASSERT(nr_root, 1);
+
+		}
+
+		*nr_nodes += 1;
 
 	}
 	printf("\n");
@@ -1055,22 +1092,22 @@ rb_tree_st* rb_tree_right_rotate(rb_tree_st *root, common_data_compare_t compare
 		right_child = rb_tree_find_parent_rel(root, compare);
 		if (right_child == TRUE)
 		{
-			T2->rb_tree_parent->rb_tree_right = root;
+			root->rb_tree_parent->rb_tree_right = left;
 		}
 		else
 		{
-			T2->rb_tree_parent->rb_tree_left = root;
+			root->rb_tree_parent->rb_tree_left = left;
 		}
-		root->rb_tree_parent = left;
 
 	}
 
 	/*
-	 * Parent of left should be NULL.
+	 * Parent of left should be root's parent.
 	 * Parents of T1 and T3 will remain same.
 	 * Parent of T2 should be root.
 	 */
-	left->rb_tree_parent = NULL;
+	left->rb_tree_parent = root->rb_tree_parent;
+	root->rb_tree_parent = left;
 	if (T2)
 	{
 		T2->rb_tree_parent = root;
