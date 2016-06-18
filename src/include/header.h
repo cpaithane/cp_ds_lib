@@ -24,6 +24,13 @@
 
 #define MAX(a, b) ((a > b) ? (a) : (b))
 
+#define SWAP(type, a, b)	\
+do {			\
+	type tmp = a;	\
+	a = b;		\
+	b = tmp;	\
+}while (0)
+
 #define CHECK_RC(actual_rc, expected_rc)\
 do {\
 	\

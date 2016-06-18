@@ -3,7 +3,8 @@
 extern rb_tree_st *rb_tree_root;
 
 /*
- * This test case tests insertion with 7 nodes in rightmost side.
+ * This test case tests insertion with 50 nodes in rightmost side.
+ * Mostly, this test case tests case 1 and case 3 violations.
  */
 int rb_tree_test_case1()
 {
@@ -11,10 +12,13 @@ int rb_tree_test_case1()
 	int rc = EOK;
 	int i;
 
-	for (i = 0; i < 7; i++)
+	for (i = 0; i < 50; i++)
 	{
 
-		rb_tree_insert(rb_tree_root, &i, sizeof(int), common_int_data_compare);
+		rb_tree_insert(
+				rb_tree_root,
+				&i, sizeof(int),
+				common_int_data_compare);
 		CHECK_RC_ASSERT((rb_tree_root == NULL), 0);
 
 	}
@@ -29,7 +33,7 @@ int rb_tree_test_case1()
 }
 
 /*
- * This test case tests insertion with 7 nodes in leftmost side.
+ * This test case tests insertion with 50 nodes in leftmost side.
  */
 int rb_tree_test_case2()
 {
@@ -37,7 +41,7 @@ int rb_tree_test_case2()
 	int rc = EOK;
 	int i;
 
-	for (i = 10; i > 0; i--)
+	for (i = 50; i > 0; i--)
 	{
 
 		rb_tree_insert(
@@ -59,16 +63,35 @@ int rb_tree_test_case2()
 }
 
 /*
- * This function inserts random data inside BST.
+ * This function inserts random data inside BST. Mostly this tests case 2 
+ * violations.
  */
 int rb_tree_test_case3()
 {
 
 	int rc = EOK;
 	int i;
-	int data[7] = {100, 10, 200, 20, 400, 30, 600};
+	int data[16] =
+	{10, 1000, 20, 2000, 30, 3000, 40, 4000, 50, 5000, 60, 
+	6000, 70, 7000, 80, 8000};
 
-	for (i = 0; i < 7; i++)
+	for (i = 0; i < 16; i++)
+	{
+
+		rb_tree_insert(
+				rb_tree_root,
+				&(data[i]),
+				sizeof(int),
+				common_int_data_compare);
+		CHECK_RC_ASSERT((rb_tree_root == NULL), 0);
+
+	}
+
+	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
+	rb_tree_destroy_tree(rb_tree_root);
+	rb_tree_root = NULL;
+
+	for (i = 15; i >= 0; i--)
 	{
 
 		rb_tree_insert(
@@ -306,7 +329,6 @@ int rb_tree_tc_execute()
 	rc = rb_tree_test_case1();
 	rc = rb_tree_test_case2();
 	rc = rb_tree_test_case3();
-
 #ifdef DELETE_SUPPORT
 	rc = rb_tree_test_case4();
 	rc = rb_tree_test_case5();
