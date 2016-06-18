@@ -50,6 +50,9 @@ void rb_tree_dealloc_node(rb_tree_st **nodep)
 
 }
 
+/*
+ * This function does inorder traversal of RBTree and validates the node.
+ */
 void rb_tree_inorder_traversal(
 			rb_tree_st *root,
 			rb_tree_node_printer_t rb_tree_node_printer)
@@ -62,6 +65,8 @@ void rb_tree_inorder_traversal(
 	{
 		return;
 	}
+
+	rb_tree_validate_node(root);
 
 	/*
 	 * traverse to the left subtree
@@ -77,6 +82,39 @@ void rb_tree_inorder_traversal(
 	 * traverse to the right subtree
 	 */
 	rb_tree_inorder_traversal(root->rb_tree_right, rb_tree_node_printer);
+
+}
+
+/*
+ * Adding more checks to verify the node satisfies the RB tree propperty.
+ */
+void rb_tree_validate_node(rb_tree_st *root)
+{
+
+	rb_tree_color_et par_color, color;
+	rb_tree_st *par_node;
+
+	color = RB_TREE_GET_NODE_COLOR(root);
+
+	/*
+	 * root of the tree should be black.
+	 */
+	if (root == rb_tree_root)
+	{
+		CHECK_RC_ASSERT(color, BLACK);
+	}
+
+	/*
+	 * If node is red, then its parent should be black.
+	 */
+	if (color == RED)
+	{
+
+		par_node = rb_tree_get_parent(root);
+		par_color = RB_TREE_GET_NODE_COLOR(par_node);
+		CHECK_RC_ASSERT(par_color, BLACK);
+
+	}
 
 }
 
@@ -540,6 +578,13 @@ rb_tree_st *rb_tree_handle_violation1(
 	if (grand_parent != rb_tree_root)
 	{
 		rb_tree_change_node_color(grand_parent);
+
+		/*
+		 * Check if grand parent and parent of grand parent are red. If yes,
+		 * then handle the violations.
+		 */
+		rb_tree_check_fix_violation(grand_parent, compare);
+
 	}
 
 	return root;

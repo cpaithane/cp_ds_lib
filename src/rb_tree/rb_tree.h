@@ -67,6 +67,8 @@ void bst_inorder_traversal(
 			rb_tree_st *root,
 			rb_tree_node_printer_t rb_tree_node_printer);
 
+void rb_tree_validate_node(rb_tree_st *root);
+
 int rb_tree_traverse_bst(rb_tree_st *root,
                      rb_tree_st **parent,
                      rb_tree_st **node,
