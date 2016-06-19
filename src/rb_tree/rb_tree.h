@@ -79,23 +79,12 @@ int rb_tree_traverse_bst(rb_tree_st *root,
                      void *data,
                      common_data_compare_t compare);
 
-rb_tree_st *rb_tree_delete_node_1(rb_tree_st *root,
-                                  rb_tree_st *parent,
-                                  rb_tree_st *node_to_delete);
-
-rb_tree_st *rb_tree_delete_node_2(rb_tree_st *root,
-                                  rb_tree_st *parent,
-                                  rb_tree_st *node_to_delete);
-
-rb_tree_st *rb_tree_delete_node_3(rb_tree_st *root, 
-                                  rb_tree_st *parent,
-                                  rb_tree_st *node_to_delete,
-                                  size_t len);
-
 rb_tree_st *rb_tree_delete_node(rb_tree_st *root,
                                 void *data,
                                 size_t len,
                                 common_data_compare_t compare);
+
+rb_tree_st *rb_tree_get_min_value(rb_tree_st *root);
 
 void rb_tree_destroy_tree(rb_tree_st *root);
 

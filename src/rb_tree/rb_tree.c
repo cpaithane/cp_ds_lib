@@ -147,271 +147,6 @@ void rb_tree_validate_node(rb_tree_st *root)
 }
 
 /*
- * This function traverses RBTree till it reaches data uses compare function.
- */
-int rb_tree_traverse_bst(rb_tree_st *root, 
-		     rb_tree_st **parent, 
-		     rb_tree_st **node, 
-		     void *data, 
-		     common_data_compare_t compare)
-{
-
-	int rc = EOK;
-
-	CHECK_RC_ASSERT((data == NULL), 0);
-
-	if (root == NULL)
-	{
-		return ENOENT;
-	}
-
-	rc = compare(root->rb_tree_data, data);
-	if (rc == FIRST_GREATER)
-	{
-
-		*parent = root;
-		return (rb_tree_traverse_bst(root->rb_tree_left,
-				 parent, 
-				 node, 
-				 data, compare));
-
-	}
-	else if (rc == FIRST_LESS)
-	{
-
-		*parent = root;
-		return (rb_tree_traverse_bst(root->rb_tree_right,
-				 parent, 
-				 node, 
-				 data, compare));
-
-	}
-	else
-	{
-
-		*node = root;
-		return EOK;
-
-	}
-
-}
-
-/*
- * This function deletes leaf nodes of BST
- */
-rb_tree_st *rb_tree_delete_node_1(rb_tree_st *root,
-				  rb_tree_st *parent,
-				  rb_tree_st *node_to_delete)
-{
-
-	/*
-	 * If it is root node, return root as NULL.
-	 */
-	if (node_to_delete == rb_tree_root)
-	{
-
-		rb_tree_root = NULL;
-		root = NULL;
-
-	}
-	/*
-	 * Else, link from the parent needs to be broken.
-	 */
-	else
-	{
-
-		parent->rb_tree_left = NULL;
-		parent->rb_tree_right = NULL;
-
-	}
-
-	rb_tree_dealloc_node(&node_to_delete);
-	return root;
-
-}
-
-/*
- * This function deletes a node which has either left child or right child.
- */
-rb_tree_st *rb_tree_delete_node_2(rb_tree_st *root,
-				  rb_tree_st *parent,
-				  rb_tree_st *node_to_delete)
-{
-
-	int is_left = (node_to_delete->rb_tree_left != NULL ? 1 : 0);
-
-	/*
-	 * If deletion is for root. That means, parent is NULL.
-	 */
-	if (node_to_delete == rb_tree_root)
-	{
-
-		if (is_left)
-		{
-			rb_tree_root = node_to_delete->rb_tree_left;
-		}
-		else
-		{
-			rb_tree_root = node_to_delete->rb_tree_right;
-		}
-
-		rb_tree_dealloc_node(&node_to_delete);
-		return rb_tree_root;
-
-	}
-
-	/*
-	 * There are two subcases in this case : 
-	 * If left subtree present, assign this left subtree to the parent of the node 
-	 * to be deleted.
-	 */
-
-	if (is_left)
-	{
-		parent->rb_tree_left = node_to_delete->rb_tree_left;
-	}
-	else
-	{
-		parent->rb_tree_right = node_to_delete->rb_tree_right;
-	}
-
-	rb_tree_dealloc_node(&node_to_delete);
-	return root;
-
-}
-
-/*
- * This function deletes a node which has both the children.
- */
-rb_tree_st *rb_tree_delete_node_3(rb_tree_st *root,
-				  rb_tree_st *parent,
-				  rb_tree_st *node_to_delete,
-				  size_t len)
-{
-
-	rb_tree_st *in_suc = NULL;
-	rb_tree_st *father_of_in_suc = NULL;
-	rb_tree_st *father_of_right_subtree = node_to_delete;
-	rb_tree_st *right_subtree = node_to_delete->rb_tree_right;
-
-	/*
-	 * Find out first inorder successor of the node to be deleted.
-	 */
-	while (right_subtree->rb_tree_left != NULL)
-	{
-
-		father_of_right_subtree = right_subtree;
-		right_subtree = right_subtree->rb_tree_left;
-
-	}
-
-	in_suc = right_subtree;
-	father_of_in_suc = father_of_right_subtree;
-	CHECK_RC_ASSERT((in_suc == NULL), 0);
-	CHECK_RC_ASSERT((father_of_in_suc, NULL), 0);
-
-	/*
-	 * Now, swap the contents of inorder successor and 
-	 * node to be deleted.
-	 */
-	memcpy(node_to_delete->rb_tree_data, in_suc->rb_tree_data, len);
-
-	/*
-	 * Inorder successor can have right subtree.
-	 * We need adjust pointers of right subtree.
-	 */
-	if (father_of_in_suc != node_to_delete)
-	{
-		node_to_delete->rb_tree_left = in_suc->rb_tree_right;
-	}
-	else
-	{
-		node_to_delete->rb_tree_right = in_suc->rb_tree_right;
-	}
-
-	/*
-	 * Delete the node pointed by inorder predecessor.
-	 */
-	rb_tree_dealloc_node(&in_suc);
-
-	return root;
-
-}
-
-/*
- * This function deletes the node which contains specified value
- */
-rb_tree_st *rb_tree_delete_node(rb_tree_st *root,
-				void *data,
-				size_t len,
-				common_data_compare_t compare)
-{
-
-	rb_tree_st *node_to_delete = NULL;
-	rb_tree_st *parent = NULL;
-
-	/*
-	 * First traverse to the node of deletion.
-	 */
-	rb_tree_traverse_bst(root, &parent, &node_to_delete, data, compare);
-
-	CHECK_RC_ASSERT((node_to_delete == NULL), 0);
-	if (root != rb_tree_root)
-	{
-		CHECK_RC_ASSERT((parent == NULL), 0);
-	}
-
-	/*
-	 * There are three cases of deletion
-	 * 1. Deletion of leaf node
-	 * 2. Deletion of node which has single child
-	 * 3. Deletion of node which has two child
-	 */
-
-	/*
-	 * Case 1 of deletion
-	 */
-	if ((node_to_delete->rb_tree_left == NULL) && 
-	    (node_to_delete->rb_tree_right == NULL))
-	{
-
-		root = rb_tree_delete_node_1(root, parent, node_to_delete);
-		return root;
-
-	}
-
-	/*
-	 * Case 2 of deletion
-	 */
-	if ((node_to_delete->rb_tree_left == NULL) || 
-	    (node_to_delete->rb_tree_right == NULL))
-	{
-
-		root = rb_tree_delete_node_2(root, parent, node_to_delete);
-		return root;
-
-	}
-
-	/*
-	 * Case 3 of deletion
-	 */
-	if ((node_to_delete->rb_tree_left) && 
-	    (node_to_delete->rb_tree_right))
-	{
-
-		root = rb_tree_delete_node_3(root, parent, node_to_delete, len);
-		return root;
-
-	}
-
-	/*
-	 * Should not reach here by any means. Mess !
-	 */
-	CHECK_RC_ASSERT(1, 0);
-
-}
-
-/*
  * This function returns pointer to parent node.
  * rb_tree_root doesn't have parent_node. So, this will return NULL.
  * For every other node, it should will return non-NULL value.
@@ -1237,6 +972,29 @@ rb_tree_st *rb_tree_handle_spl_right_rotate(rb_tree_st *root)
 	}
 
 	return root;
+
+}
+
+/*
+ * This function finds a node which has minimum value in tree. 
+ */
+rb_tree_st *rb_tree_get_min_value(rb_tree_st *root)
+{
+
+	rb_tree_st *in_suc = NULL;
+	rb_tree_st *right_subtree = root;
+
+	/*
+	 * Find out first inorder successor of the node.
+	 */
+	while (right_subtree->rb_tree_left != NULL)
+	{
+		right_subtree = right_subtree->rb_tree_left;
+	}
+
+	in_suc = right_subtree;
+	CHECK_RC_ASSERT((in_suc == NULL), 0);
+	return in_suc;
 
 }
 
