@@ -37,4 +37,40 @@ Fix :
 
 ============
 
+Deletion violation cases :
+
+A. red-black : If node and its child are either red or black, then mark the replaced
+node as black. This means, no change in black height.
+
+B.
+1. Sibling is black and one of two children are red.
+2. Here, two children for sibling should be present.
+Fix :
+1. Rotate the sibling to left if sibling is right child of its parent.
+2. Rotate the sibling to right if sibling is left child of its parent.
+3. If right child of sibling is red, recolor it to black.
+
+C.
+1. Sibling is black and left child of sibling is red. Right-Left case
+Fix :
+1. Right rotate the sibling.
+2. Swap the color among the sibling and left child.
+3. Left rotate the parent of sibling.
+Vice versa in case of Left-Right case.
+
+D.
+1. Sibling is black and two children are black.
+Fix :
+1. Change the color of sibling node to red.
+2. Recur to parent
+
+E.
+1. Sibling is red.
+Fix :
+1. Left rotate parent of sibling if sibling is right child.
+2. Right rotate parent of sibling if sibling is left child.
+3. Recolor sibiling and parent of sibling.
+4. Now, previous left child of sibling could be red. This results into case D.
+
+============
 
