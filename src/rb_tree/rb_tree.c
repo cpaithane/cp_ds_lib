@@ -184,6 +184,40 @@ rb_tree_st *rb_tree_get_grand_parent(const rb_tree_st *node)
 }
 
 /*
+ * This function returns sibling node of the RBTree node.
+ */
+rb_tree_st *rb_tree_get_sibling(
+		const rb_tree_st *node,
+		common_data_compare_t compare)
+{
+
+	rb_tree_st *sibling = NULL;
+	rb_tree_st *parent_node = NULL;
+	int rc = EOK;
+
+	parent_node = rb_tree_get_parent(node);
+
+	if (parent_node != NULL)
+	{
+
+		rc = compare(node->rb_tree_data, parent_node->rb_tree_data);
+		CHECK_RC_ASSERT((rc != IDENTICAL), 1);
+		if (rc == FIRST_LESS)
+		{
+			sibling = parent_node->rb_tree_right;
+		}
+		else
+		{
+			sibling = parent_node->rb_tree_left;
+		}
+
+	}
+
+	return sibling;
+
+}
+
+/*
  * This function returns uncle node of the RBTree node.
  */
 rb_tree_st *rb_tree_get_uncle(const rb_tree_st *node, common_data_compare_t compare)
@@ -995,6 +1029,29 @@ rb_tree_st *rb_tree_get_min_value(rb_tree_st *root)
 	in_suc = right_subtree;
 	CHECK_RC_ASSERT((in_suc == NULL), 0);
 	return in_suc;
+
+}
+
+/*
+ * This function gets sibling of node, left and right child and their colors.
+ */
+void rb_tree_get_sibling_details(rb_tree_st *node, rb_tree_st **sibling,
+	rb_tree_st **left, rb_tree_st **right, rb_tree_color_et *lcolor,
+	rb_tree_color_et *rcolor, rb_tree_color_et *sib_color,
+	common_data_compare_t compare)
+{
+
+	*sibling = rb_tree_get_sibling(node, compare);
+	if (*sibling == NULL)
+	{
+		return;
+	}
+
+	*left = (*sibling)->rb_tree_left;
+	*right = (*sibling)->rb_tree_right;
+	*sib_color = RB_TREE_GET_NODE_COLOR((*sibling));
+	*lcolor = RB_TREE_GET_NODE_COLOR((*left));
+	*rcolor = RB_TREE_GET_NODE_COLOR((*right));
 
 }
 

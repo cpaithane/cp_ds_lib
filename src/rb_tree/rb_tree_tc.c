@@ -116,8 +116,6 @@ int rb_tree_test_case3()
 
 }
 
-#ifdef DELETE_SUPPORT
-
 /*
  * This test case tests deletion of leaf node.
  */
@@ -138,11 +136,13 @@ int rb_tree_test_case4()
 
 	}
 
+	max_nr_nodes = i;
 	rb_tree_inorder_traversal(rb_tree_root, rb_tree_int_node_printer);
 
 	for (i = 6; i >= 0; i--)
 	{
 
+		max_nr_nodes--;
 		rb_tree_delete_node(rb_tree_root, &i,
 				    sizeof(int), common_int_data_compare);
 		printf("After deleting %d\n", i);
@@ -155,6 +155,8 @@ int rb_tree_test_case4()
 	return rc;
 
 }
+
+#ifdef DELETE_SUPPORT
 
 /*
  * This test case tests deletion of leaf node.
@@ -334,8 +336,8 @@ int rb_tree_tc_execute()
 	rc = rb_tree_test_case1();
 	rc = rb_tree_test_case2();
 	rc = rb_tree_test_case3();
-#ifdef DELETE_SUPPORT
 	rc = rb_tree_test_case4();
+#ifdef DELETE_SUPPORT
 	rc = rb_tree_test_case5();
 	rc = rb_tree_test_case6();
 	rc = rb_tree_test_case7();

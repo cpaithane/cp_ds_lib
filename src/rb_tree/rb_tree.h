@@ -85,6 +85,9 @@ rb_tree_st *rb_tree_get_parent(const rb_tree_st *node);
 rb_tree_st *rb_tree_get_grand_parent(const rb_tree_st *node);
 rb_tree_st *rb_tree_get_uncle(const rb_tree_st *node, common_data_compare_t compare);
 void rb_tree_change_node_color(rb_tree_st *node);
+rb_tree_st *rb_tree_get_sibling(
+                const rb_tree_st *node,
+                common_data_compare_t compare);
 
 bool rb_tree_check_violation1(rb_tree_st *node, common_data_compare_t compare);
 bool rb_tree_check_violation2(rb_tree_st *node, common_data_compare_t compare);
@@ -130,5 +133,27 @@ void rb_tree_find_parent_details(rb_tree_st *parent,
                                  bool *right_parent,
                                  bool *left_child);
 
+void rb_tree_get_sibling_details(rb_tree_st *node, rb_tree_st **sibling,
+        rb_tree_st **left, rb_tree_st **right, rb_tree_color_et *lcolor,
+        rb_tree_color_et *rcolor, rb_tree_color_et *sib_color,
+        common_data_compare_t compare);
+
 bool rb_tree_find_parent_rel(rb_tree_st *root, common_data_compare_t compare);
+
+/*
+ * Delete related APIs
+ */
+rb_tree_st *rb_tree_fix_delete_case1(rb_tree_st *node);
+
+rb_tree_st *rb_tree_fix_delete_case2(
+                rb_tree_st *node,
+                common_data_compare_t compare);
+
+rb_tree_st *rb_tree_fix_delete_case3(
+                rb_tree_st *node,
+                common_data_compare_t compare);
+
+rb_tree_st *rb_tree_fix_delete_case4(
+                rb_tree_st *node,
+                common_data_compare_t compare);
 
