@@ -7,22 +7,34 @@ What is Red-Black tree?
 
 =============
 
-APIs to consider : 
-
-1. get_uncle_node of a given node.
-2. 
-
-=============
-
 Insertion Violations cases : 
 
-1. Case 1 : 
-2. Case 2 :
-3. Case 3 :
+A. Case 1 :
+Red node whose parent and uncle is also red.
+Fix : Change the color of parent, grand parent and uncle node.
+If grand parent is root of RB tree, then don't change the color as root should
+always be a black node.
+Also, if grand parent is red and its parent is also red, go ahead for fixing
+violations.
+
+B. Case 2 :
+1. Red node whose parent is red and uncle is black.
+2. Also, the node is right child of left parent.
+3. Also, the node is left child of right parent.
+Fix : 
+1. Left rotate around the parent node in case of #2.
+2. Right rotate around the parent node in case of #3.
+3. Go for case 3 fix.
+
+C. Case 3 :
+1. Uncle node is black.
+2. Violating node is left child of left child.
+3. Violating node is right child of right child.
+Fix : 
+1. Rotate the grand parent to right in case of #1.
+2. Rotate the grand parent to left in case of #2.
+3. Swap the colors of grand parent and parent node.
 
 ============
 
-Plan to implement : 
-
-1. Lets extend the BST code. Lets have parent associated with every node.
 
