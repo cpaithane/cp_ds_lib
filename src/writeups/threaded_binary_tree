@@ -1,0 +1,78 @@
+Every node will have following members :
+
+left child
+left bit to indicate whether left child is converted to thread
+data
+right child
+right bit to indicate whether right child is converted to thread
+
+================
+
+Insertion into threaded binary tree
+
+Case 1 : For root creation :
+Allocate empty node
+lbit = rbit = 1;
+left = right = root;
+
+Case 2 : Insertion at L2 level :
+1. Allocate empty node and find out suitable place the node.
+
+2. Lets say parent is the parent node under which insertion of new node is going to take place.
+
+3. If new node is going to be the left child of parent node :
+Inorder successor of the new node is parent node.
+Inorder predecessor of the new node is NULL.
+rbit = 1, lbit = 0;
+
+4. If new node is going to be the right child of parent node :
+Inorder predecessor of the new node is parent node.
+Inorder successor of the new node is NULL.
+rbit = 0, lbit = 1;
+
+Case 3 : Insertion at L3 and above level
+1. Allocate empty node and find out suitable place the node.
+
+2. Lets say parent is the parent node under which insertion of new node is going to take place.
+
+3. If new node is going to be the left child of left parent :
+inorder predecessor of the new node is NULL.
+Inorder successor of the new node is parent.
+lbit = 0, rbit = 1 for new node.
+left of parent should point to new node.
+lbit of parent should be 0.
+
+4. If new node is going to be the right child of right parent :
+inorder successor of the new node is NULL.
+Inorder predecessor of the new node is parent.
+lbit = 1, rbit = 0 for new node.
+right of parent should point to new node.
+rbit of parent should be 0.
+
+5. If new node is going to be left child of right parent :
+inorder predecessor of the new node is left thread of parent
+inorder successor of the new node is parent.
+left of parent points to the new node.
+lbit of new node = 1
+rbit of new node = 1
+lbit of parent = 0
+
+6. If new node is going to be right child of left parent :
+inorder successor of the new node is right thread of parent
+inorder predecessor of the new node is parent.
+right of parent points to the new node.
+lbit of new node = 1
+rbit of new node = 1
+rbit of parent = 0
+
+============
+
+Inorder traversal of threaded binary tree
+
+Go to left : Stop when lbit == 0 or left == NULL.
+Find out inorder successor of left till we get rbit == 0 or right == NULL.
+
+How to find out inorder successor of a node:
+
+If right of a node is NULL, return.
+

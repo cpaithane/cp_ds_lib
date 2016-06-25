@@ -1,0 +1,8 @@
+1. Insertion into BTree : Same as that of B+ tree.
+2. Deletion from BTree : Two cases :
+
+a. If the key to delete is at leaf, level delete it.
+b. if key is in internal node, check whether children nodes are mergeable.
+b.1 : If merge able, merge the two children.
+b.2 : If not merge able, then find out inorder predecessor of the key. Replace inorder predecessor with the key.
+
