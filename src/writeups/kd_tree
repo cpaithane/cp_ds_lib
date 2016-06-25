@@ -1,0 +1,8 @@
+1. K-Dimensional tree is a binary tree whose main use case is such as searches involving a multidimensional search key (e.g. range searches and nearest neighbor searches). k-d trees are a special case of binary space partitioning trees
+
+Insertion/search into K-Dimensional tree :
+
+For example, k = 2. That means, every point has x and y dimensions.
+
+1. It happens similar to binary search tree except on even level, values from x axis are matched and on odd level, values from y axis are matched.
+
