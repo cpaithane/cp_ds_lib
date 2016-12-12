@@ -6,3 +6,4 @@ void two_d_arr();
 int pattern_detect(char *str);
 void resize_arr_tc();
 void drop_duplicates_tc();
+void bitwise_tc();

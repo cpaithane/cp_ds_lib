@@ -23,7 +23,12 @@ int main(int argc, char *argv[])
 
 	resize_arr_tc();
 	drop_duplicates_tc();
+	bitwise_tc();
 
+	int a[5];
+	int *ptr = a;
+	//a++;
+	//a = ptr;
         return 0;
 
 }
