@@ -1,0 +1,31 @@
+You should aim for a solution with O(n) time and O(n) space, where n is the size of the input array.
+Contains Duplicate
+Given an integer array nums, return true if any value appears more than once in the array, otherwise return false.
+
+Example 1:
+Input: nums = [1, 2, 3, 3]
+Output: true
+Example 2:
+Input: nums = [1, 2, 3, 4]
+Output: false
+
+You should aim for a solution with O(n) time and O(n) space, where n is the size of the input array.
+
+Code with O(n) time and O(n) space complexity.
+
+#include <unordered_set>
+
+class Solution {
+public:
+    bool hasDuplicate(vector<int>& nums) {
+        std::unordered_set<int> hash;
+        for (int x : nums) {
+            if (hash.find(x) == hash.end()) {
+                hash.insert(x);
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+};
