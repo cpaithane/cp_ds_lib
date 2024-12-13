@@ -1,0 +1,49 @@
+Binary Search
+Solved 
+You are given an array of distinct integers nums, sorted in ascending order, and an integer target.
+
+Implement a function to search for target within nums. If it exists, then return its index, otherwise, return -1.
+
+Your solution must run in O(logn) time.
+
+Input: nums = [-1,0,2,4,6,8], target = 4
+
+Output: 3
+
+Input: nums = [-1,0,2,4,6,8], target = 3
+
+Output: -1
+
+Constraints:
+
+1 <= nums.length <= 10000.
+-10000 < nums[i], target < 10000
+
+You should aim for a solution with O(logn) time and O(1) space, where n is the size of the input array.
+
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int start = 0;
+        int end = nums.size() - 1;
+
+        while (start <= end) {
+            /* To avoid the integer overflow. */
+            int mid = start + (end - start) / 2;
+
+            /* The target matched in the array. */
+            if (nums[mid] == target) {
+                return mid;
+            }
+
+            /* The target is in the right part of the array. */
+            if (nums[mid] < target) {
+                start = mid + 1;
+            } else {
+                /* The target is in the left part of the array. */
+                end = mid - 1;
+            }
+        }
+        return -1;
+    }
+};
