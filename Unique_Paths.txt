@@ -1,0 +1,41 @@
+Unique Paths
+Solved 
+There is an m x n grid where you are allowed to move either down or to the right at any point in time.
+
+Given the two integers m and n, return the number of possible unique paths that can be taken from the top-left corner of the grid (grid[0][0]) to the bottom-right corner (grid[m - 1][n - 1]).
+
+You may assume the output will fit in a 32-bit integer.
+
+Input: m = 3, n = 6
+
+Output: 21
+
+Input: m = 3, n = 3
+
+Output: 6
+
+class Solution {
+public:
+    vector<vector<int>> dp;
+
+    int uniquePathsCore(int r, int c, int m, int n) {
+        if ((r == (m - 1)) && (c == (n - 1))) {
+            return 1;
+        }
+
+        if (r >= m || c >= n) {
+            return 0;
+        }
+
+        if (dp[r][c] != -1) {return dp[r][c];}
+
+        dp[r][c] = uniquePathsCore(r+1, c, m, n) + uniquePathsCore(r, c+1, m, n);
+
+        return dp[r][c];
+    }
+
+    int uniquePaths(int m, int n) {
+        dp.resize(m, vector<int>(n, -1));
+        return uniquePathsCore(0, 0, m, n);
+    }
+};
