@@ -1,0 +1,59 @@
+Valid Anagram
+Solved 
+Given two strings s and t, return true if the two strings are anagrams of each other, otherwise return false.
+
+An anagram is a string that contains the exact same characters as another string, but the order of the characters can be different.
+
+Input: s = "racecar", t = "carrace"
+
+Output: true
+
+Input: s = "jar", t = "jam"
+
+Output: false
+
+s and t consist of lowercase English letters.
+
+You should aim for a solution with O(n + m) time and O(1) space, where n is the length of the string s and m is the length of the string t.
+
+#include <unordered_map>
+
+class Solution {
+public:
+    bool isAnagram(string s, string t) {
+        unordered_map<char, int> s_map = {};
+        unordered_map<char, int> t_map = {};
+        int s_size = s.size();
+        int t_size = t.size();
+
+        /* sizes of both strings don't match. */
+        if (s_size != t_size) {
+            return false;
+        }
+
+        /* Build a hash map for both the strings. */
+        for (int i = 0; i < s_size; i++) {
+            s_map[s[i]]++;
+        }
+
+        for (int i = 0; i < t_size; i++) {
+            t_map[t[i]]++;
+        }
+
+        for (auto p : s_map) {
+            char ch = p.first;
+            int freq = p.second;
+
+            /* character in one string is absent in another. */
+            if (t_map.find(ch) == t_map.end()) {
+                return false;
+            }
+
+            /* Frequency of the character doesn't match. */
+            if (freq != t_map.find(ch)->second) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
