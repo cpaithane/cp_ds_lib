@@ -1,0 +1,53 @@
+Top K Frequent Elements
+Solved 
+Given an integer array nums and an integer k, return the k most frequent elements within the array.
+
+The test cases are generated such that the answer is always unique.
+
+You may return the output in any order.
+
+Input: nums = [1,2,2,3,3,3], k = 2
+
+Output: [2,3]
+
+Input: nums = [7,7], k = 1
+
+Output: [7]
+
+Constraints:
+
+1 <= nums.length <= 10^4.
+-1000 <= nums[i] <= 1000
+1 <= k <= number of distinct elements in nums.
+
+You should aim for a solution with O(n) time and O(n) space, where n is the size of the input array.
+
+Use the bucket sort algorithm to create n buckets, grouping numbers based on their frequencies from 1 to n. Then, pick the top k numbers from the buckets, starting from n down to 1.
+
+class Solution {
+public:
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        vector<int> res;
+        unordered_map<int, int> count;
+
+        for (int num : nums) {
+            count[num] = 1 + count[num];
+        }
+
+        vector<vector<int>> freq(nums.size() + 1);
+        for (auto entry : count) {
+            freq[entry.second].push_back(entry.first);
+        }
+
+        for (int i = freq.size() - 1; i > 0; i--) {
+            for (int num : freq[i]) {
+                res.push_back(num);
+                if (res.size() == k) {
+                    return res;
+                }
+            }
+        }
+        return res;
+    }
+};
+
