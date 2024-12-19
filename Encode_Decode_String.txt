@@ -1,0 +1,54 @@
+Encode and Decode Strings
+Solved 
+Design an algorithm to encode a list of strings to a single string. The encoded string is then decoded back to the original list of strings.
+
+Please implement encode and decode
+
+Input: ["neet","code","love","you"]
+
+Output:["neet","code","love","you"]
+
+Input: ["we","say",":","yes"]
+
+Output: ["we","say",":","yes"]
+
+Constraints:
+
+0 <= strs.length < 100
+0 <= strs[i].length < 200
+strs[i] contains only UTF-8 characters.
+
+You should aim for a solution with O(m) time and O(1) space for each encode() and decode() call, where m is the sum of lengths of all the strings.
+
+class Solution {
+public:
+    string encode(vector<string>& strs) {
+        string enc_str;
+
+        for (string s : strs) {
+            enc_str += to_string(s.size()) + "#" + s;
+        }
+        return enc_str;
+    }
+
+    vector<string> decode(string s) {
+        vector<string> strs;
+
+        for (int i = 0; i < s.size();) {
+            int j = i;
+            while (s[j] != '#') {
+                j++;
+            }
+
+            /* length of the string can be found from i to j */
+            string len_str = s.substr(i, (j-i));
+            int length = stoi(len_str);
+
+            i = j + 1;
+            j = i + length;
+            strs.push_back(s.substr(i, length));
+            i = j;
+        }
+        return strs;
+    }
+};
