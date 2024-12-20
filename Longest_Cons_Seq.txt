@@ -1,0 +1,53 @@
+Longest Consecutive Sequence
+Solved 
+Given an array of integers nums, return the length of the longest consecutive sequence of elements that can be formed.
+
+A consecutive sequence is a sequence of elements in which each element is exactly 1 greater than the previous element. The elements do not have to be consecutive in the original array.
+
+You must write an algorithm that runs in O(n) time.
+
+Input: nums = [2,20,4,10,3,4,5]
+
+Output: 4
+
+Explanation: The longest consecutive sequence is [2, 3, 4, 5].
+
+Input: nums = [0,3,2,5,4,6,1,1]
+
+Output: 7
+
+Constraints:
+
+0 <= nums.length <= 1000
+-10^9 <= nums[i] <= 10^9
+
+You should aim for a solution as good or better than O(n) time and O(n) space, where n is the size of the input array.
+
+We can consider a number num as the start of a sequence if and only if num - 1 does not exist in the given array. We iterate through the array and only start building the sequence if it is the start of a sequence. This avoids repeated work. We can use a hash set for O(1) lookups by converting the array to a hash set.
+
+
+class Solution:
+    def longestConsecutive(self, nums: List[int]) -> int:
+        seq = set()
+        start_seqs = []
+
+        for num in nums:
+            seq.add(num)
+
+        for num in nums:
+            if (num - 1) not in seq:
+                start_seqs.append(num)
+
+        max_len = 0
+        for start_seq in start_seqs:
+            seq_len = 0
+            for i in range(start_seq, len(nums)+1):
+                if i in seq:
+                    seq_len += 1
+                else:
+                    break
+            
+            if seq_len > max_len:
+                max_len = seq_len
+        
+        return max_len
