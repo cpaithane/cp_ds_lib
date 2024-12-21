@@ -1,0 +1,52 @@
+Container With Most Water
+Solved 
+You are given an integer array heights where heights[i] represents the height of the 
+i
+t
+h
+i 
+th
+  bar.
+
+You may choose any two bars to form a container. Return the maximum amount of water a container can store.
+
+Input: height = [1,7,2,5,4,7,3,6]
+
+Output: 36
+
+Input: height = [2,2,2]
+
+Output: 4
+
+2 <= height.length <= 1000
+0 <= height[i] <= 1000
+
+You should aim for a solution with O(n) time and O(1) space, where n is the size of the input array.
+
+We can use the two pointer algorithm. One pointer is at the start and the other at the end. At each step, we calculate the amount of water using the formula (j - i) * min(heights[i], heights[j]). Then, we move the pointer that has the smaller height value. Can you think why we only move the pointer at smaller height?
+
+In the formula, the amount of water depends only on the minimum height. Therefore, it is appropriate to replace the smaller height value.
+
+class Solution:
+    def maxArea(self, heights: List[int]) -> int:
+        s = 0
+        e = len(heights) - 1
+        max_area = 0
+
+        #
+        # Area between two bars is calculated as (e - s) * min(heights[e], heights[s])
+        # Move the pointer with smaller value
+        #
+        while s < e:
+            area = min(heights[s], heights[e]) * (e - s)
+            max_area = max(area, max_area)
+
+            if heights[s] < heights[e]:
+                s += 1
+            elif heights[s] > heights[e]:
+                e -= 1
+            else:
+                s += 1
+                e -= 1
+
+        return max_area
