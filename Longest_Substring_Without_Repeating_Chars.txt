@@ -1,0 +1,47 @@
+Longest Substring Without Repeating Characters
+
+Given a string s, find the length of the longest substring without duplicate characters.
+
+A substring is a contiguous sequence of characters within a string.
+
+Example 1:
+
+Input: s = "zxyzxyz"
+
+Output: 3
+Explanation: The string "xyz" is the longest without duplicate characters.
+
+Input: s = "xxxx"
+
+Output: 1
+
+Constraints:
+
+0 <= s.length <= 1000
+s may consist of printable ASCII characters.
+
+You should aim for a solution with O(n) time and O(m) space, where n is the length of the string and m is the number of unique characters in the string.
+
+We can iterate through the given string with index r as the right boundary and l as the left boundary of the window. We use a hash set to check if the character is present in the window or not. When we encounter a character at index r that is already present in the window, we shrink the window by incrementing the l pointer until the window no longer contains any duplicates. Also, we remove characters from the hash set that are excluded from the window as the l pointer moves. At each iteration, we update the result with the length of the current window, r - l + 1, if this length is greater than the current result.
+
+class Solution:
+    def lengthOfLongestSubstring(self, s: str) -> int:
+        charSet = set()
+        start = 0
+        max_len = 0
+
+        # Use sliding window algorithm.
+        # start points to first char of the string and end points to last.
+        # Check if s[end] is in hash. If it is there, increase the sliding window length
+        # In every iteration update the max_len
+        for end in range(0, len(s)):
+            # While -> Because need to shrink the sliding window for duplicates.
+            while s[end] in charSet:
+                charSet.remove(s[start])
+                start += 1
+            
+            charSet.add(s[end])
+            max_len = max(max_len, (end - start + 1))
+        
+        return max_len
+
