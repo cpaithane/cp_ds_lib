@@ -1,0 +1,74 @@
+Minimum Window Substring
+Given two strings s and t, return the shortest substring of s such that every character in t, including duplicates, is present in the substring. If such a substring does not exist, return an empty string "".
+
+You may assume that the correct output is always unique.
+
+Input: s = "OUZODYXAZV", t = "XYZ"
+
+Output: "YXAZ"
+
+Input: s = "xyz", t = "xyz"
+
+Output: "xyz"
+
+Input: s = "x", t = "xy"
+
+Output: ""
+
+You should aim for a solution with O(n) time and O(m) space, where n is the length of the string s and m is the number of unique characters in s and t.
+
+class Solution:
+    def minWindow(self, s: str, t: str) -> str:
+        len_s = len(s)
+        len_t = len(t)
+
+        if len_t > len_s:
+            return ""
+
+        l = 0
+        min_res_len = len(s)
+        min_sub_str = ""
+        count_dict = {}
+        need = len_t
+
+        # Build dictionary for t
+        for ch in t:
+            val = 1 + count_dict.get(ch, 0)
+            count_dict[ch] = val
+
+        # Iterate through s
+        for r in range(0, len(s)):
+            have = 0
+            win_dict = {}
+            sub_str = s[l:r+1]
+
+            # Is all chars in substr present in t
+            # If yes, update min_sub_str and min_len
+            for ch in sub_str:
+                win_dict[ch] = 1 + win_dict.get(ch, 0)
+            
+            all_chars_found = True
+            for k, v in count_dict.items():
+                if win_dict.get(k, 0) == 0:
+                    all_chars_found = False
+                    break
+
+                if win_dict[k] >= count_dict[k]:
+                    have += win_dict.get(k, 0)
+
+            # Shrink window till all chars in t found in sub_str
+            while all_chars_found and need <= have:
+                sub_str = s[l:r+1]
+                if count_dict.get(s[l], 0) != 0:
+                    have -= 1
+
+                print(sub_str, l, r)
+                l += 1
+
+                if min_res_len >= len(sub_str):
+                    min_sub_str = sub_str
+                    min_res_len = len(sub_str)
+                
+            r += 1
+
+        return min_sub_str
