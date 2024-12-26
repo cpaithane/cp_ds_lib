@@ -1,0 +1,53 @@
+Search a 2D Matrix
+Solved 
+You are given an m x n 2-D integer array matrix and an integer target.
+
+Each row in matrix is sorted in non-decreasing order.
+The first integer of every row is greater than the last integer of the previous row.
+Return true if target exists within matrix or false otherwise.
+
+Can you write a solution that runs in O(log(m * n)) time?
+
+
+Input: matrix = [[1,2,4,8],[10,11,12,13],[14,20,30,40]], target = 10
+
+Output: true
+
+Input: matrix = [[1,2,4,8],[10,11,12,13],[14,20,30,40]], target = 15
+
+Output: false
+You should aim for a solution with O(log(m * n)) time and O(1) space, where m is the number of rows and n is the number of columns in the matrix.
+
+class Solution:
+    def searchMatrix(self, matrix: List[List[int]], target: int) -> bool:
+        rows = len(matrix)
+        cols = len(matrix[0])
+        print(rows, cols)
+
+        for r in range(0, rows):
+            # Found the row where the target should present.
+            # Now, binary search between this row only.
+            if matrix[r][0] <= target and matrix[r][cols-1] >= target:
+                row_matr = matrix[r]
+                s = 0
+                e = cols -1
+
+                while s <= e:
+                    mid = (s + ((e-s)//2))
+                    if row_matr[mid] == target:
+                        return True
+                    elif row_matr[mid] < target:
+                        s = mid + 1
+                    else:
+                        e = mid - 1
+
+                # Binary search didn't find the target.
+                return False
+
+            elif matrix[r][0] < target:
+                r += 1
+            else:
+                r -= 1
+
+        return False
+
