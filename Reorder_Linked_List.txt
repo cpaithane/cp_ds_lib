@@ -1,0 +1,71 @@
+Reorder Linked List
+
+You are given the head of a singly linked-list.
+
+The positions of a linked list of length = 7 for example, can intially be represented as:
+
+[0, 1, 2, 3, 4, 5, 6]
+
+Reorder the nodes of the linked list to be in the following order:
+
+[0, 6, 1, 5, 2, 4, 3]
+
+Notice that in the general case for a list of length = n the nodes are reordered to be in the following order:
+
+[0, n-1, 1, n-2, 2, n-3, ...]
+
+You may not modify the values in the list's nodes, but instead you must reorder the nodes themselves.
+
+Input: head = [2,4,6,8]
+
+Output: [2,8,4,6]
+
+Input: head = [2,4,6,8,10]
+
+Output: [2,10,4,8,6]
+
+You should aim for a solution with O(n) time and O(1) space, where n is the length of the given list.
+
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+
+class Solution:
+    def reorderList(self, head: Optional[ListNode]) -> None:
+        #Divide the list into two halves
+        slow = head
+        fast = head.next
+
+        while fast != None and fast.next != None:
+            slow = slow.next
+            fast = fast.next.next
+        
+        head2 = slow.next
+        slow.next = None
+
+        # Reverse the head2
+        prev = None
+        cur = head2
+
+        while cur != None:
+            # Always store the pointer which will be modified next
+            next = cur.next
+            cur.next = prev
+            prev = cur
+            cur = next
+        
+        # Merge the head2 with head1
+        head1 = head
+        head2 = prev
+        while head2 != None:
+            # Always store the pointer which will be modified next
+            h1_next = head1.next
+            h2_next = head2.next
+
+            head1.next = head2
+            head2.next = h1_next
+            
+            head1 = h1_next
+            head2 = h2_next
