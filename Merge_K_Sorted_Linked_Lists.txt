@@ -1,0 +1,64 @@
+Merge K Sorted Linked Lists
+
+You are given an array of k linked lists lists, where each list is sorted in ascending order.
+
+Return the sorted linked list that is the result of merging all of the individual linked lists.
+
+Input: lists = [[1,2,4],[1,3,5],[3,6]]
+
+Output: [1,1,2,3,3,4,5,6]
+
+Input: lists = []
+
+Output: []
+
+Input: lists = [[]]
+
+Output: []
+
+You should aim for a solution as good or better than O(n * k) time and O(1) space, where k is the total number of lists and n is the total number of nodes across all lists.
+
+# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+
+class Solution:
+    def mergeSortedLists(self, list1: List[ListNode], list2: List[ListNode]) -> ListNode:
+        res_head = res_end = None
+
+        if list1 == None:
+            return list2
+        if list2 == None:
+            return list1
+
+        while list1 != None and list2 != None:
+            node = None
+            if list1.val < list2.val:
+                node = list1
+                list1 = list1.next
+            else:
+                node = list2
+                list2 = list2.next
+            
+            if res_head == None:
+                res_head = res_end = node
+            else:
+                res_end.next = node
+                res_end = res_end.next
+
+        if list1 != None:
+            res_end.next = list1
+        else:
+            res_end.next = list2
+
+        return res_head
+
+    def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
+        res_head = None
+
+        for i, l in enumerate(lists):
+            res_head = self.mergeSortedLists(res_head, l)
+
+        return res_head
