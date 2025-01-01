@@ -1,0 +1,37 @@
+Find the Duplicate Number
+
+You are given an array of integers nums containing n + 1 integers. Each integer in nums is in the range [1, n] inclusive.
+
+Every integer appears exactly once, except for one integer which appears two or more times. Return the integer that appears more than once.
+
+Input: nums = [1,2,3,2,2]
+
+Output: 2
+
+Input: nums = [1,2,3,4,4]
+
+Output: 4
+
+Follow-up: Can you solve the problem without modifying the array nums and using 
+
+You should aim for a solution with O(n) time and O(1) space, where n is the size of the input array.
+
+class Solution:
+    def findDuplicate(self, nums: List[int]) -> int:
+        for i, v in enumerate(nums):
+            # Check if the v is at its right pos
+            if i == (v - 1):
+                continue
+
+            # v is not at right position
+            # Check if v and num at right pos are equal
+            # If they are equal, then return nums[i]
+            # Else, swap.
+            if v == nums[nums[i] - 1]:
+                return v
+
+            tmp = v
+            nums[i] = nums[v - 1]
+            nums[v - 1] = tmp
+
+        return -1
