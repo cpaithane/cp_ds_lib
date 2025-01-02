@@ -1,0 +1,55 @@
+Diameter of Binary Tree
+
+The diameter of a binary tree is defined as the length of the longest path between any two nodes within the tree. The path does not necessarily have to pass through the root.
+
+The length of a path between two nodes in a binary tree is the number of edges between the nodes.
+
+Given the root of a binary tree root, return the diameter of the tree.
+
+Input: root = [1,null,2,3,4,5]
+
+Output: 3
+
+Explanation: 3 is the length of the path [1,2,3,5] or [5,3,2,4].
+
+Input: root = [1,2,3]
+
+Output: 2
+
+You should aim for a solution with O(n) time and O(n) space, where n is the number of nodes in the tree.
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+
+class Solution:
+    def diameterOfBinaryTree(self, root: Optional[TreeNode]) -> int:
+        md = 0
+
+        # For any given node, the longest path that passes through it
+        # is the sum of the height of its left subtree and the height
+        # of its right subtree.
+        def traversal(root):
+            nonlocal md
+            if root == None:
+                return 0
+
+            if root.left == None and root.right == None:
+                return 1
+
+            # Traverse post-order way
+            lh = traversal(root.left)
+            rh = traversal(root.right)
+
+            # Diameter of the tree is sum of height of left and right subtrees
+            md = max(lh + rh, md)
+
+            # What is the height of the subtree?
+            # 1 + max(height(l) + height(r))
+            return 1 + max(lh, rh)
+
+        traversal(root)
+        return md
