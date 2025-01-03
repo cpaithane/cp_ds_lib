@@ -1,0 +1,48 @@
+Same Binary Tree
+
+Given the roots of two binary trees p and q, return true if the trees are equivalent, otherwise return false.
+
+Two binary trees are considered equivalent if they share the exact same structure and the nodes have the same values.
+
+Example 1:
+
+Input: p = [1,2,3], q = [1,2,3]
+
+Output: true
+
+Input: p = [4,7], q = [4,null,7]
+
+Output: false
+
+Input: p = [1,2,3], q = [1,3,2]
+
+Output: false
+
+You should aim for a solution with O(n) time and O(n) space, where n is the number of nodes in the tree.
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+
+class Solution:
+    def isSameTree(self, p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:
+        # Empty trees
+        if p == None and q == None:
+            return True
+
+        # Structures are not same
+        if p == None or q == None:
+            return False
+
+        if (p.left != None and q.left == None) or (p.right != None and q.right == None):
+            return False
+
+        # values are same and structures are same
+        # That means, inorder traversal.
+        if (p.val == q.val) and (self.isSameTree(p.left, q.left)) and (self.isSameTree(p.right, q.right)):
+            return True
+        
+        return False
