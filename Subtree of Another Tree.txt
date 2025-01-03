@@ -1,0 +1,51 @@
+Subtree of Another Tree
+
+Given the roots of two binary trees root and subRoot, return true if there is a subtree of root with the same structure and node values of subRoot and false otherwise.
+
+A subtree of a binary tree tree is a tree that consists of a node in tree and all of this node's descendants. The tree tree could also be considered as a subtree of itself.
+
+Input: root = [1,2,3,4,5], subRoot = [2,4,5]
+
+Output: true
+
+Input: root = [1,2,3,4,5,null,null,6], subRoot = [2,4,5]
+
+Output: false
+
+You should aim for a solution as good or better than O(m * n) time and O(m + n) space, where n and m are the number of nodes in root and subRoot, respectively.
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+
+class Solution:   
+    def isSubtree(self, root: Optional[TreeNode], subRoot: Optional[TreeNode]) -> bool:
+        # subTree is exhausted, then return True
+        if subRoot == None:
+            return True
+        
+        # The root is exhausted before subRoot, return False
+        if root == None:
+            return False
+
+        # Structure is same, return True
+        if self.isSameTree(root, subRoot):
+            return True
+
+        # Go for left first. If not found, go for right.
+        return self.isSubtree(root.left, subRoot) or self.isSubtree(root.right, subRoot)
+
+    def isSameTree(self, root: [TreeNode], subRoot: [TreeNode]) -> bool:
+        if root == None and subRoot == None:
+            return True
+
+        if root == None or subRoot == None:
+            return False
+
+        if (root.val == subRoot.val) and (self.isSameTree(root.left, subRoot.left)) and (self.isSameTree(root.right, subRoot.right)):
+            return True
+
+        return False
