@@ -1,0 +1,47 @@
+Balanced Binary Tree
+
+Given a binary tree, return true if it is height-balanced and false otherwise.
+
+A height-balanced binary tree is defined as a binary tree in which the left and right subtrees of every node differ in height by no more than 1.
+
+Input: root = [1,2,3,null,null,4]
+
+Output: true
+
+Input: root = [1,2,3,null,null,4,null,5]
+
+Output: false
+
+Input: root = []
+
+Output: true
+
+You should aim for a solution with O(n) time and O(n) space, where n is the number of nodes in the tree.
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+
+class Solution:
+    def isBalanced(self, root: Optional[TreeNode]) -> bool:
+
+        # There are two conditions to check at each node.
+        # 1. Height of left and right subtrees
+        # 2. Whether the subtree at node is balanced or not.
+        # Use postorder traversal technique here.
+        # Find height of subtree at every node and whether it is balanced.
+        def dfs(root):
+            if root == None:
+                return (True, 0)
+
+            l_bal, l_h = dfs(root.left)
+            r_bal, r_h = dfs(root.right)
+
+            is_bal = (l_bal and r_bal) and (abs(l_h - r_h) <= 1)
+            return (is_bal, 1 + max(l_h, r_h))
+
+        is_bal, h = dfs(root)
+        return is_bal
