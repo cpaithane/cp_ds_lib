@@ -1,0 +1,55 @@
+Binary Tree Level Order Traversal
+
+Given a binary tree root, return the level order traversal of it as a nested list, where each sublist contains the values of nodes at a particular level in the tree, from left to right.
+
+Input: root = [1,2,3,4,5,6,7]
+
+Output: [[1],[2,3],[4,5,6,7]]
+
+Input: root = [1]
+
+Output: [[1]]
+
+Input: root = []
+
+Output: []
+
+You should aim for a solution with O(n) time and O(n) space, where n is the number of nodes in the given tree.
+
+# Definition for a binary tree node.
+# class TreeNode:
+#     def __init__(self, val=0, left=None, right=None):
+#         self.val = val
+#         self.left = left
+#         self.right = right
+
+class Solution:
+    def levelOrder(self, root: Optional[TreeNode]) -> List[List[int]]:
+        queue = []
+        level = 0
+        res_list = []
+        level_dict = {}
+
+        if root == None:
+            return []
+
+        queue.append((root, level))
+
+        while len(queue) != 0:
+            node, level = queue.pop(0)
+
+            if node.left != None:
+                queue.append((node.left, level + 1))
+            if node.right != None:
+                queue.append((node.right, level + 1))
+
+            sub_list = level_dict.get(level, [])
+            sub_list.append(node.val)
+            level_dict[level] = sub_list
+            level += 1
+
+        # Form a res_list
+        for i, v in level_dict.items():
+            res_list.append(v)
+        
+        return res_list
