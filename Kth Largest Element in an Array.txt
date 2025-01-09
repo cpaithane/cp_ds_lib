@@ -1,0 +1,39 @@
+Kth Largest Element in an Array
+
+Given an unsorted array of integers nums and an integer k, return the kth largest element in the array.
+
+By kth largest element, we mean the kth largest element in the sorted order, not the kth distinct element.
+
+Follow-up: Can you solve it without sorting?
+
+Input: nums = [2,3,1,5,4], k = 2
+
+Output: 4
+
+Input: nums = [2,3,1,1,5,5,4], k = 3
+
+Output: 4
+
+You should aim for a solution as good or better than O(nlogk) time and O(k) space, where n is the size of the input array, and k represents the rank of the largest number to be returned (i.e., the k-th largest element).
+
+from heapq import heappop, heappush, heapify
+
+class Solution:
+    def findKthLargest(self, nums: List[int], k: int) -> int:
+        min_heap = []
+        heapify(min_heap)
+
+        for num in nums:
+            if len(min_heap) < k:
+                heappush(min_heap, num)
+            else:
+                top = heappop(min_heap)
+                if top < num:
+                    heappush(min_heap, num)
+                else:
+                    heappush(min_heap, top)
+
+        if len(min_heap) > 0:
+            return heappop(min_heap)
+        
+        return 0
