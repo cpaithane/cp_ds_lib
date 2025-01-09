@@ -1,0 +1,68 @@
+Task Scheduler
+
+You are given an array of CPU tasks tasks, where tasks[i] is an uppercase english character from A to Z. You are also given an integer n.
+
+Each CPU cycle allows the completion of a single task, and tasks may be completed in any order.
+
+The only constraint is that identical tasks must be separated by at least n CPU cycles, to cooldown the CPU.
+
+Return the minimum number of CPU cycles required to complete all tasks.
+
+Input: tasks = ["X","X","Y","Y"], n = 2
+
+Output: 5
+
+Explanation: A possible sequence is: X -> Y -> idle -> X -> Y.
+
+Input: tasks = ["A","A","A","B","C"], n = 3
+
+Output: 9
+Explanation: A possible sequence is: A -> B -> C -> Idle -> A -> Idle -> Idle -> Idle -> A.
+
+You should aim for a solution with O(m) time and O(1) space, where m is the size of the input array.
+
+from heapq import heappop, heappush, heapify
+
+class Solution:
+    def leastInterval(self, tasks: List[str], n: int) -> int:
+        # Let's maintain max_heap of frequencies.
+        max_heap = []
+        heapify(max_heap)
+
+        # Let's use deque for entry in max_heap whose freq. is not 0 yet.
+        queue = deque()
+
+        # Count the letters
+        count_dict = {}
+        for task in tasks:
+            freq = count_dict.get(task, 0)
+            count_dict[task] = freq + 1
+
+        # Push frequencies in the max_heap
+        for k, v in count_dict.items():
+            heappush(max_heap, -1 * v)
+
+        cycles = 0
+        # Till max_heap and queue are not exhausted
+        while len(max_heap) > 0 or len(queue) > 0:
+            # Increment the cycles
+            cycles += 1
+            
+            # If max_heap has entries, pop it.
+            if len(max_heap) > 0:
+                freq = -1 * heappop(max_heap)
+                freq -= 1
+
+                # Store the non-zero freq. in queue with cycles + n.
+                if freq > 0:
+                    queue.append((freq, cycles + n))
+
+            else:
+                # If max_heap is empty then update the cycle from head of queue
+                cycles = queue[0][1]
+
+            # If current cycle matches with the cycles from head of queue
+            if queue and queue[0][1] == cycles:
+                heappush(max_heap, -1 * queue.popleft()[0])
+
+        return cycles
