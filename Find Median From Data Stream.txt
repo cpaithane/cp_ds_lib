@@ -1,0 +1,74 @@
+Find Median From Data Stream
+
+The median is the middle value in a sorted list of integers. For lists of even length, there is no middle value, so the median is the mean of the two middle values.
+
+For example:
+
+For arr = [1,2,3], the median is 2.
+For arr = [1,2], the median is (1 + 2) / 2 = 1.5
+Implement the MedianFinder class:
+
+MedianFinder() initializes the MedianFinder object.
+void addNum(int num) adds the integer num from the data stream to the data structure.
+double findMedian() returns the median of all elements so far.
+
+Input:
+["MedianFinder", "addNum", "1", "findMedian", "addNum", "3" "findMedian", "addNum", "2", "findMedian"]
+
+Output:
+[null, null, 1.0, null, 2.0, null, 2.0]
+
+Explanation:
+MedianFinder medianFinder = new MedianFinder();
+medianFinder.addNum(1);    // arr = [1]
+medianFinder.findMedian(); // return 1.0
+medianFinder.addNum(3);    // arr = [1, 3]
+medianFinder.findMedian(); // return 2.0
+medianFinder.addNum(2);    // arr[1, 2, 3]
+medianFinder.findMedian(); // return 2.0
+
+You should aim for a solution with O(logn) time for addNum(), O(1) time for findMedian(), and O(n) space, where n is the current number of elements.
+
+from heapq import heapify, heappush, heappop 
+
+class MedianFinder:
+    def __init__(self):
+        self.min_heap = []
+        self.max_heap = []
+        heapify(self.min_heap)
+        heapify(self.max_heap)
+
+    def addNum(self, num: int) -> None:
+        if self.min_heap and num > self.min_heap[0]:
+            heappush(self.min_heap, num)
+        else:
+            heappush(self.max_heap, (-1 * num))
+
+        if len(self.max_heap) > len(self.min_heap) + 1:
+            top_max = -1 * heappop(self.max_heap)
+            heappush(self.min_heap, top_max)
+
+        if len(self.min_heap) > len(self.max_heap) + 1:
+            top_min = heappop(self.min_heap)
+            heappush(self.max_heap, (-1 * top_min))
+
+    def findMedian(self) -> float:
+        min_len = len(self.min_heap)
+        max_len = len(self.max_heap)
+
+        if min_len == 0 and max_len == 0:
+            return 0
+
+        top_min = 0
+        top_max = 0
+        if len(self.min_heap) > 0:
+            top_min = self.min_heap[0]
+        if len(self.max_heap) > 0:
+            top_max = -1 * self.max_heap[0]
+
+        if max_len > min_len:
+            return top_max
+        elif min_len > max_len:
+            return top_min
+        else:
+            return ((top_min + top_max) / 2.0)
