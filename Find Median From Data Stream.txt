@@ -29,6 +29,47 @@ medianFinder.findMedian(); // return 2.0
 
 You should aim for a solution with O(logn) time for addNum(), O(1) time for findMedian(), and O(n) space, where n is the current number of elements.
 
+###########
+
+Idea here is this:
+
+If we sort the ints received so far from the stream, there are two distinct partitions. Left partition and right partition.
+If we pick maximum from left partition and minimum from right partition, then median can be easily formed for even no. of elements.
+For no. of elements, we can choose minimum of right partition. These values indicate medians.
+
+Stream = 5, 8, 10, 3, 2, 1 
+Sorted = 1, 2, 3, 5, 8, 10
+         -------  -------- 
+	 Left	  Right
+
+Stream = 5, 8, 10, 3, 2
+Sorted = 2, 3,    5, 8, 10
+         -------  -------- 
+	 Left	  Right
+
+
+As we need to maintain maximum of left partition, we need max heap for this.
+As we need to maintain minimum of right partition, we need min heap for this.
+
+Now, the question is how do we insert elements into these heaps.
+
+First, start with inserting into max_heap. Push into min_heap only if num > top_min. If sizes of the heaps imbalances, pop from the heap with higher no. of elements and push to the heap with less no. of elements.
+
+Stream = 5, 8, 10, 3, 2
+
+Max_heap            Min_heap
+5
+5, 8			
+------> Rearrange --> 
+5			8
+5			8, 10
+3, 5			8, 10
+2, 3, 5			8, 10
+------> Rearrange --> 
+2, 3			5, 8, 10
+
+###########
+
 from heapq import heapify, heappush, heappop 
 
 class MedianFinder:
