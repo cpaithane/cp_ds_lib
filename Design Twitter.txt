@@ -1,0 +1,86 @@
+Design Twitter
+
+Implement a simplified version of Twitter which allows users to post tweets, follow/unfollow each other, and view the 10 most recent tweets within their own news feed.
+
+Users and tweets are uniquely identified by their IDs (integers).
+
+Implement the following methods:
+
+Twitter() Initializes the twitter object.
+
+void postTweet(int userId, int tweetId) Publish a new tweet with ID tweetId by the user userId. You may assume that each tweetId is unique.
+
+List<Integer> getNewsFeed(int userId) Fetches at most the 10 most recent tweet IDs in the user's news feed. Each item must be posted by users who the user is following or by the user themself. Tweets IDs should be ordered from most recent to least recent.
+
+void follow(int followerId, int followeeId) The user with ID followerId follows the user with ID followeeId.
+
+void unfollow(int followerId, int followeeId) The user with ID followerId unfollows the user with ID followeeId.
+
+Input:
+["Twitter", "postTweet", [1, 10], "postTweet", [2, 20], "getNewsFeed", [1], "getNewsFeed", [2], "follow", [1, 2], "getNewsFeed", [1], "getNewsFeed", [2], "unfollow", [1, 2], "getNewsFeed", [1]]
+
+Output:
+[null, null, null, [10], [20], null, [20, 10], [20], null, [10]]
+
+Explanation:
+Twitter twitter = new Twitter();
+twitter.postTweet(1, 10); // User 1 posts a new tweet with id = 10.
+twitter.postTweet(2, 20); // User 2 posts a new tweet with id = 20.
+twitter.getNewsFeed(1);   // User 1's news feed should only contain their own tweets -> [10].
+twitter.getNewsFeed(2);   // User 2's news feed should only contain their own tweets -> [20].
+twitter.follow(1, 2);     // User 1 follows user 2.
+twitter.getNewsFeed(1);   // User 1's news feed should contain both tweets from user 1 and user 2 -> [20, 10].
+twitter.getNewsFeed(2);   // User 2's news feed should still only contain their own tweets -> [20].
+twitter.unfollow(1, 2);   // User 1 follows user 2.
+twitter.getNewsFeed(1);   // User 1's news feed should only contain their own tweets -> [10].
+
+You should aim for a solution with O(n) time for each getNewsFeed() function call, O(1) time for the remaining methods, and O((N * m) + (N * M) + n) space, where n is the number of followeeIds associated with the userId, m is the maximum number of tweets by any user, N is the total number of userIds, and M is the maximum number of followees for any user.
+
+
+from heapq import heapify, heappush, heappop 
+
+class Twitter:
+
+    def __init__(self):
+        self.follower_dict = {}
+        self.tweets_dict = {}
+        self.count = 0
+
+    def postTweet(self, userId: int, tweetId: int) -> None:
+        tweets = self.tweets_dict.get(userId, [])
+        tweets.append((self.count, tweetId))
+        self.tweets_dict[userId] = tweets
+        self.count += 1
+
+    def getNewsFeed(self, userId: int) -> List[int]:
+        res_tweets = []
+        res_tweets.extend(self.tweets_dict.get(userId, []))
+        followees = self.follower_dict.get(userId, [])
+        for f in followees:
+            if f != userId:
+                res_tweets.extend(self.tweets_dict[f])
+
+        heap = []
+        heapify(heap)
+
+        for count, tweet in res_tweets:
+            heappush(heap, (-1 * count, tweet))
+
+        res_list = []
+        while len(heap) > 0 and len(res_list) < 10:
+            count, tweet = heappop(heap)
+            res_list.append(tweet)
+
+        return res_list
+
+    def follow(self, followerId: int, followeeId: int) -> None:
+        followees = self.follower_dict.get(followerId, [])
+        if followeeId not in followees:
+            followees.append(followeeId)
+            self.follower_dict[followerId] = followees
+
+    def unfollow(self, followerId: int, followeeId: int) -> None:
+        followees = self.follower_dict.get(followerId, [])
+        if followeeId in followees:
+            followees.remove(followeeId)
+        self.follower_dict[followerId] = followees
