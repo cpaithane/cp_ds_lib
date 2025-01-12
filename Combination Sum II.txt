@@ -1,0 +1,63 @@
+Combination Sum II
+
+You are given an array of integers candidates, which may contain duplicates, and a target integer target. Your task is to return a list of all unique combinations of candidates where the chosen numbers sum to target.
+
+Each element from candidates may be chosen at most once within a combination. The solution set must not contain duplicate combinations.
+
+You may return the combinations in any order and the order of the numbers in each combination can be in any order.
+
+Input: candidates = [9,2,2,4,6,1,5], target = 8
+
+Output: [
+  [1,2,5],
+  [2,2,4],
+  [2,6]
+]
+
+Input: candidates = [1,2,3,4,5], target = 7
+
+Output: [
+  [1,2,4],
+  [2,5],
+  [3,4]
+]
+
+Constraints:
+
+1 <= candidates.length <= 100
+1 <= candidates[i] <= 50
+1 <= target <= 30
+
+You should aim for a solution with O(n * (2^n)) time and O(n) space, where n is the size of the input array.
+
+class Solution:
+    def combinationSum2(self, candidates: List[int], target: int) -> List[List[int]]:
+        res_list = []
+        res = []
+
+        # Sort the array to avoid duplicate combinations
+        candidates.sort()
+
+        def combinationSumCore(idx, add, res):
+            # Base conditions
+            if add == target:
+                res_list.append(res.copy())
+                return
+
+            if idx >= len(candidates) or add > target:
+                return
+
+            # Include the element in the res. and go for next with updated additions
+            res.append(candidates[idx])
+            combinationSumCore(idx + 1, add + candidates[idx], res)
+            res.pop()
+
+            # Skip same candidates.
+            while idx + 1 < len(candidates) and candidates[idx] == candidates[idx + 1]:
+                idx += 1
+
+            # Go for next element without updated additions.
+            combinationSumCore(idx + 1, add, res)
+
+        combinationSumCore(0, 0, res)
+        return res_list
