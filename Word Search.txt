@@ -1,0 +1,75 @@
+Word Search
+
+Given a 2-D grid of characters board and a string word, return true if the word is present in the grid, otherwise return false.
+
+For the word to be present it must be possible to form it with a path in the board with horizontally or vertically neighboring cells. The same cell may not be used more than once in a word.
+
+Input: 
+board = [
+  ["A","B","C","D"],
+  ["S","A","A","T"],
+  ["A","C","A","E"]
+],
+word = "CAT"
+
+Output: true
+
+Input: 
+board = [
+  ["A","B","C","D"],
+  ["S","A","A","T"],
+  ["A","C","A","E"]
+],
+word = "BAT"
+
+Output: false
+
+Constraints:
+
+1 <= board.length, board[i].length <= 5
+1 <= word.length <= 10
+board and word consists of only lowercase and uppercase English letters.
+
+You should aim for a solution with O(m * (4^n)) time and O(n) space, where m is the number of cells in the given board and n is the size of the given word.
+
+class Solution:
+    def exist(self, board: List[List[str]], word: str) -> bool:
+        rows = len(board)
+        cols = len(board[0])
+        visited = set()
+
+        # If word is empty.
+        if len(word) == 0:
+            return True
+
+        # No need to pass the res string as we are adding
+        # chars which are matching with the word
+        def backtrack(r, c, idx):
+            # Base conditions
+            if idx == len(word):
+                return True
+
+            if (r < 0 or r >= rows or
+                c < 0 or c >= cols or
+                (r, c) in visited or
+                idx > len(word) or
+                word[idx] != board[r][c]):
+                return False
+
+            visited.add((r, c))
+
+            rc = (backtrack(r + 1, c, idx + 1) or
+                 backtrack(r - 1, c, idx + 1) or
+                 backtrack(r, c + 1, idx + 1) or
+                 backtrack(r, c - 1, idx + 1))
+
+            visited.remove((r, c))
+            return rc
+
+        for r in range(0, rows):
+            for c in range(0, cols):
+                found = backtrack(r, c, 0)
+                if found == True:
+                    return True
+        
+        return False
