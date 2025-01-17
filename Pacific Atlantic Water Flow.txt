@@ -1,0 +1,64 @@
+Pacific Atlantic Water Flow
+
+You are given a rectangular island heights where heights[r][c] represents the height above sea level of the cell at coordinate (r, c).
+
+The islands borders the Pacific Ocean from the top and left sides, and borders the Atlantic Ocean from the bottom and right sides.
+
+Water can flow in four directions (up, down, left, or right) from a cell to a neighboring cell with height equal or lower. Water can also flow into the ocean from cells adjacent to the ocean.
+
+Find all cells where water can flow from that cell to both the Pacific and Atlantic oceans. Return it as a 2D list where each element is a list [r, c] representing the row and column of the cell. You may return the answer in any order.
+
+Input: heights = [
+  [4,2,7,3,4],
+  [7,4,6,4,7],
+  [6,3,5,3,6]
+]
+
+Output: [[0,2],[0,4],[1,0],[1,1],[1,2],[1,3],[1,4],[2,0]]
+
+Input: heights = [[1],[1]]
+
+Output: [[0,0],[0,1]]
+
+You should aim for a solution with O(m * n) time and O(m * n) space, where m is the number of rows and n is the number of columns in the grid.
+
+class Solution:
+    def pacificAtlantic(self, heights: List[List[int]]) -> List[List[int]]:
+        pacific = set()
+        atlantic = set()
+        rows = len(heights)
+        cols = len(heights[0])
+        res_list = []
+
+        def dfs(r, c, visited, prev_height):
+            if (r < 0 or r >= rows or
+                c < 0 or c >= cols or
+                (r, c) in visited or
+                heights[r][c] < prev_height):
+                return
+
+            visited.add((r, c))
+            dfs(r + 1, c, visited, heights[r][c])
+            dfs(r - 1, c, visited, heights[r][c])
+            dfs(r, c + 1, visited, heights[r][c])
+            dfs(r, c - 1, visited, heights[r][c])
+
+        # Idea here is to do dfs in reverse fashion.
+        # Start from pacific and atlantic border
+        # Add the (r,c) in these sets if prevHeights is greater than or equal
+        # to current height
+        for c in range(0, cols):
+            dfs(0, c, pacific, heights[0][c])
+            dfs(rows - 1, c, atlantic, heights[rows-1][c])
+
+        for r in range(0, rows):
+            dfs(r, 0, pacific, heights[r][0])
+            dfs(r, cols - 1, atlantic, heights[r][cols - 1])
+
+        # Check nodes which are in both sets.
+        for r in range(0, rows):
+            for c in range(0, cols):
+                if (r, c) in pacific and (r, c) in atlantic:
+                    res_list.append([r, c])
+
+        return res_list
