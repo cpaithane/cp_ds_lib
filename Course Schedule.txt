@@ -1,0 +1,65 @@
+Course Schedule
+
+You are given an array prerequisites where prerequisites[i] = [a, b] indicates that you must take course b first if you want to take course a.
+
+The pair [0, 1], indicates that must take course 1 before taking course 0.
+
+There are a total of numCourses courses you are required to take, labeled from 0 to numCourses - 1.
+
+Return true if it is possible to finish all courses, otherwise return false.
+
+
+Input: numCourses = 2, prerequisites = [[0,1]]
+
+Output: true
+
+Explanation: First take course 1 (no prerequisites) and then take course 0.
+
+Input: numCourses = 2, prerequisites = [[0,1],[1,0]]
+
+Output: false
+
+Explanation: In order to take course 1 you must take course 0, and to take course 0 you must take course 1. So it is impossible.
+
+You should aim for a solution with O(V + E) time and O(V + E) space, where V is the number of courses (nodes) and E is the number of prerequisites (edges).
+
+class Solution:
+    def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:
+        graph = {}
+        visited = set()
+
+        # numCourses are total courses
+        for c in range(numCourses):
+            graph[c] = []
+
+        # Form a graph of depedencies.
+        for pre in prerequisites:
+            neighbors = graph.get(pre[1], [])
+            neighbors.append(pre[0])
+            graph[pre[1]] = neighbors
+
+        # If dfs from the node detects cycle, can't finish the course
+        def dfs(node):
+            if node in visited:
+                return True
+
+            visited.add(node)
+            for n in graph[node]:
+                if dfs(n):
+                    return True
+            
+            # Remove from visited set to revisit the node again.
+            visited.remove(node)
+            graph[node] = []
+            return False
+
+        count = 0
+        for node, neighbors in graph.items():
+            if dfs(node):
+                return False
+
+            count += 1
+
+        if count == numCourses:
+            return True
+        return False
