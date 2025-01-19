@@ -1,0 +1,82 @@
+Surrounded Regions
+
+You are given a 2-D matrix board containing 'X' and 'O' characters.
+
+If a continous, four-directionally connected group of 'O's is surrounded by 'X's, it is considered to be surrounded.
+
+Change all surrounded regions of 'O's to 'X's and do so in-place by modifying the input board.
+
+Input: board = [
+  ["X","X","X","X"],
+  ["X","O","O","X"],
+  ["X","O","O","X"],
+  ["X","X","X","O"]
+]
+
+Output: [
+  ["X","X","X","X"],
+  ["X","X","X","X"],
+  ["X","X","X","X"],
+  ["X","X","X","O"]
+]
+
+Explanation: Note that regions that are on the border are not considered surrounded regions.
+
+Constraints:
+
+1 <= board.length, board[i].length <= 200
+board[i][j] is 'X' or 'O'.
+
+You should aim for a solution with O(m * n) time and O(m * n) space, where m is the number of rows and n is the number of columns in the matrix.
+
+class Solution:
+    def solve(self, board: List[List[str]]) -> None:
+        # Let's think in reverse for this.
+        # If border has O then the region is not surrounded by x
+        # In this case, we need to scan border rows and cols and issue
+        # dfs only if there is o. dfs should be 4 directional.
+        # As we are issuing dfs on border elements having O, we need to
+        # mark them as unsurrounded region by converting it to T
+        # By this way, we will have 3 conditions:
+        # 1. X -> No change.
+        # 2. O -> Is having surrounded region by X. Convert this to X
+        # 3. T -> Unsurrounded region. Convert it back to O
+
+        rows = len(board)
+        cols = len(board[0])
+
+        def capture(r, c):
+            if (r < 0 or r >= rows or
+                c < 0 or c >= cols or
+                board[r][c] != "O"):
+                return
+
+            board[r][c] = "T"
+
+            capture(r - 1, c)
+            capture(r + 1, c)
+            capture(r, c - 1)
+            capture(r, c + 1)
+
+        for r in range(0, rows):
+            if board[r][0] == "O":
+                capture(r, 0)
+            
+        for c in range(0, cols):
+            if board[0][c] == "O":
+                capture(0, c)
+
+        for r in range(0, rows):
+            if board[r][cols - 1] == "O":
+                capture(r, cols - 1)
+
+        for c in range(0, cols):
+            if board[rows - 1][c]:
+                capture(rows - 1, c)
+
+        for r in range(0, rows):
+            for c in range(0, cols):
+                if board[r][c] == "O":
+                    board[r][c] = "X"
+                elif board[r][c] == "T":
+                    board[r][c] = "O"
