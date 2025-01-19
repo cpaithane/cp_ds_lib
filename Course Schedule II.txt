@@ -1,0 +1,59 @@
+Course Schedule II
+
+You are given an array prerequisites where prerequisites[i] = [a, b] indicates that you must take course b first if you want to take course a.
+
+For example, the pair [0, 1], indicates that to take course 0 you have to first take course 1.
+There are a total of numCourses courses you are required to take, labeled from 0 to numCourses - 1.
+
+Return a valid ordering of courses you can take to finish all courses. If there are many valid answers, return any of them. If it's not possible to finish all courses, return an empty array.
+
+Input: numCourses = 3, prerequisites = [[1,0]]
+
+Output: [0,1,2]
+
+Explanation: We must ensure that course 0 is taken before course 1.
+
+Input: numCourses = 3, prerequisites = [[0,1],[1,2],[2,0]]
+
+Output: []
+
+Explanation: It's impossible to finish all courses.
+
+You should aim for a solution with O(V + E) time and O(V + E) space, where V is the number of courses (nodes) and E is the number of prerequisites (edges).
+
+class Solution:
+    def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:
+        graph = {}
+        indegrees = [0] * numCourses
+        q = deque()
+        res_list = []
+
+        for c in range(numCourses):
+            graph[c] = []
+
+        # Form a graph of depedencies.
+        for pre in prerequisites:
+            neighbors = graph.get(pre[1], [])
+            neighbors.append(pre[0])
+            graph[pre[1]] = neighbors
+            indegrees[pre[0]] += 1
+
+        # Append nodes to queue only if indegree of the node is 0
+        for i in range(0, numCourses):
+            if indegrees[i] == 0:
+                q.append(i)
+
+        while q:
+            node = q.popleft()
+            res_list.append(node)
+
+            # Do BFS on neighboring nodes
+            # Append neighbors to q with indegree as 0
+            for n in graph[node]:
+                indegrees[n] -= 1
+                if indegrees[n] == 0:
+                    q.append(n)
+
+        if len(res_list) == numCourses:
+            return res_list
+        return []
