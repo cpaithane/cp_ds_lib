@@ -1,0 +1,52 @@
+Number of Connected Components in an Undirected Graph
+
+There is an undirected graph with n nodes. There is also an edges array, where edges[i] = [a, b] means that there is an edge between node a and node b in the graph.
+
+The nodes are numbered from 0 to n - 1.
+
+Return the total number of connected components in that graph.
+
+Input:
+n=3
+edges=[[0,1], [0,2]]
+
+Output:
+1
+
+Input:
+n=6
+edges=[[0,1], [1,2], [2,3], [4,5]]
+
+Output:
+2
+
+You should aim for a solution as good or better than O(V + E) time and O(V + E) space, where V is the number vertices and E is the number of edges in the graph.
+
+class Solution:
+    def countComponents(self, n: int, edges: List[List[int]]) -> int:
+        graph = {}
+        visited = set()
+        connected = 0
+
+        # Build adjacency list
+        for i in range(0, n):
+            graph[i] = []
+
+        for edge in edges:
+            graph[edge[0]].append(edge[1])
+            graph[edge[1]].append(edge[0])
+
+        def dfs(node):
+            if node in visited:
+                return
+
+            visited.add(node)
+            for n in graph[node]:
+                dfs(n)
+
+        for i in range(0, n):
+            if i not in visited:
+                dfs(i)
+                connected += 1
+
+        return connected
