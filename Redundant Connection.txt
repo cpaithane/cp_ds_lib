@@ -1,0 +1,74 @@
+Redundant Connection
+
+You are given a connected undirected graph with n nodes labeled from 1 to n. Initially, it contained no cycles and consisted of n-1 edges.
+
+We have now added one additional edge to the graph. The edge has two different vertices chosen from 1 to n, and was not an edge that previously existed in the graph.
+
+The graph is represented as an array edges of length n where edges[i] = [ai, bi] represents an edge between nodes ai and bi in the graph.
+
+Return an edge that can be removed so that the graph is still a connected non-cyclical graph. If there are multiple answers, return the edge that appears last in the input edges.
+
+Input: edges = [[1,2],[1,3],[3,4],[2,4]]
+
+Output: [2,4]
+
+Input: edges = [[1,2],[1,3],[1,4],[3,4],[4,5]]
+
+Output: [3,4]
+
+Constraints:
+
+n == edges.length
+3 <= n <= 100
+1 <= edges[i][0] < edges[i][1] <= edges.length
+There are no repeated edges and no self-loops in the input.
+
+class Solution:
+    def findRedundantConnection(self, edges: List[List[int]]) -> List[int]:
+        graph = {}
+        visited = set()
+        cycle = set()
+        count = len(edges)
+
+        for i in range(0, count + 1):
+            graph[i] = []
+
+        for edge in edges:
+            graph[edge[0]].append(edge[1])
+            graph[edge[1]].append(edge[0])
+
+        cycle_start = -1
+
+        def dfs(node, parent):
+            nonlocal cycle_start
+            # Detection of cycle, track cycle_start
+            if node in visited:
+                cycle_start = node
+                return True
+
+            visited.add(node)
+
+            for n in graph[node]:
+                if n == parent:
+                    continue
+
+                if dfs(n, node) == True:
+                    # cycle_start is valid, add the n to cycle
+                    if cycle_start != -1:
+                        cycle.add(n)
+                    
+                    # node has reached cycle_start, so break the cycle_start
+                    if node == cycle_start:
+                        cycle_start = -1
+
+                    return True
+
+            return False
+
+        dfs(1, -1)
+
+        for edge in reversed(edges):
+            if edge[0] in cycle and edge[1] in cycle:
+                return [edge[0], edge[1]]
+
+        return []
