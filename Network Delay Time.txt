@@ -1,0 +1,63 @@
+Network Delay Time
+
+You are given a network of n directed nodes, labeled from 1 to n. You are also given times, a list of directed edges where times[i] = (ui, vi, ti).
+
+ui is the source node (an integer from 1 to n)
+vi is the target node (an integer from 1 to n)
+ti is the time it takes for a signal to travel from the source to the target node (an integer greater than or equal to 0).
+You are also given an integer k, representing the node that we will send a signal from.
+
+Return the minimum time it takes for all of the n nodes to receive the signal. If it is impossible for all the nodes to receive the signal, return -1 instead.
+
+Input: times = [[1,2,1],[2,3,1],[1,4,4],[3,4,1]], n = 4, k = 1
+
+Output: 3
+
+Input: times = [[1,2,1],[2,3,1]], n = 3, k = 2
+
+Output: -1
+
+Constraints:
+
+1 <= k <= n <= 100
+1 <= times.length <= 1000
+
+You should aim for a solution as good or better than O(ElogV) time and O(V + E) space, where E is the number of edges and V is the number of vertices (nodes).
+
+from heapq import heapify, heappush, heappop 
+
+class Solution:
+    def networkDelayTime(self, times: List[List[int]], n: int, k: int) -> int:
+        # Dijkstra's shortest path algorithm will solve this.
+
+        # Build adjacency list of directed graph
+        graph = {}
+        for i in range(0, n + 1):
+            graph[i] = []
+
+        for edge in times:
+            graph[edge[0]].append((edge[1], edge[2]))
+
+        # Use min_heap to store weights and node.
+        min_heap = []
+        heapify(min_heap)
+        heappush(min_heap, (0, k))
+        visited = set()
+        t = 0
+
+        while min_heap:
+            w, node = heappop(min_heap)
+            if node in visited:
+                continue
+
+            visited.add(node)
+            t = w
+
+            # Push all adjacent nodes in min_heap
+            for node2, w2 in graph[node]:
+                if node2 not in visited:
+                    heappush(min_heap, ((w + w2), node2))
+
+        if len(visited) == n:
+            return t
+        return -1
