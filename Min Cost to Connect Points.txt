@@ -1,0 +1,61 @@
+Min Cost to Connect Points
+
+You are given a 2-D integer array points, where points[i] = [xi, yi]. Each points[i] represents a distinct point on a 2-D plane.
+
+The cost of connecting two points [xi, yi] and [xj, yj] is the manhattan distance between the two points, i.e. |xi - xj| + |yi - yj|.
+
+Return the minimum cost to connect all points together, such that there exists exactly one path between each pair of points.
+
+Input: points = [[0,0],[2,2],[3,3],[2,4],[4,2]]
+
+Output: 10
+
+Constraints:
+
+1 <= points.length <= 1000
+-1000 <= xi, yi <= 1000
+
+You should aim for a solution as good or better than O((n^2)logn) time and O(n^2) space, where n is the number of points.
+
+from heapq import heapify, heappush, heappop
+
+class Solution:
+    def minCostConnectPoints(self, points: List[List[int]]) -> int:
+        # Form a undirected graph
+        # Execute prim's algorithm on the graph
+
+        total = len(points)
+        graph = {}
+        for i in range(0, total):
+            graph[i] = []
+
+        for i in range(0, total):
+            point = points[i]
+            for j in range(i + 1, total):
+                point2 = points[j]
+
+                dist = abs(point[1] - point2[1]) + abs(point[0] - point2[0])
+                graph[i].append((dist, j))
+                graph[j].append((dist, i))
+
+        res_cost = 0
+        visited = set()
+        min_heap = []
+        heapify(min_heap)
+        heappush(min_heap, (0, 0))
+
+        while len(visited) < total:
+            cost, idx = heappop(min_heap)
+            if idx in visited:
+                continue
+
+            visited.add(idx)
+            res_cost += cost
+
+            for n_cost, n in graph[idx]:
+                if n in visited:
+                    continue
+
+                heappush(min_heap, (n_cost, n))
+
+        return res_cost
