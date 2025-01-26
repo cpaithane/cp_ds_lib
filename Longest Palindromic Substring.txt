@@ -1,0 +1,54 @@
+Longest Palindromic Substring
+
+Given a string s, return the longest substring of s that is a palindrome.
+
+A palindrome is a string that reads the same forward and backward.
+
+If there are multiple palindromic substrings that have the same length, return any one of them.
+
+Input: s = "ababd"
+
+Output: "bab"
+
+Explanation: Both "aba" and "bab" are valid answers.
+
+Input: s = "abbc"
+
+Output: "bb"
+
+Constraints:
+
+1 <= s.length <= 1000
+s contains only digits and English letters.
+
+You should aim for a solution as good or better than O(n^2) time and O(1) space, where n is the length of the given string.
+
+class Solution:
+    def longestPalindrome(self, s: str) -> str:
+        # Start from middle and expand the string outside
+        # of both the directions
+        res = ""
+        res_len = 0
+
+        def form_palindrome(l, r):
+            nonlocal res_len, res
+            while l >= 0 and r < len(s) and s[l] == s[r]:
+                if res_len < (r - l + 1):
+                    res_len = r - l + 1
+                    res = s[l:r+1]
+
+                l -= 1
+                r += 1
+
+        for i in range(0, len(s)):
+            # Case of odd length palindromes
+            l = i
+            r = i
+            form_palindrome(l, r)
+
+            # Case of even length palindrome
+            l = i
+            r = i + 1
+            form_palindrome(l, r)
+
+        return res
