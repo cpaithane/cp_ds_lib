@@ -1,0 +1,41 @@
+Palindromic Substrings
+
+Given a string s, return the number of substrings within s that are palindromes.
+
+A palindrome is a string that reads the same forward and backward.
+
+Input: s = "abc"
+
+Output: 3
+
+Explanation: "a", "b", "c".
+
+Input: s = "aaa"
+
+Output: 6
+
+Explanation: "a", "a", "a", "aa", "aa", "aaa". Note that different substrings are counted as different palindromes even if the string contents are the same.
+
+You should aim for a solution as good or better than O(n^2) time and O(1) space, where n is the length of the given string.
+
+class Solution:
+    def countSubstrings(self, s: str) -> int:
+        nr_palin = 0
+
+        def find_palindrome(l, r):
+            nonlocal nr_palin
+            while l >= 0 and r < len(s) and s[l] == s[r]:
+                nr_palin += 1
+                l -= 1
+                r += 1
+
+        for i in range(0, len(s)):
+            l = i
+            r = i
+            find_palindrome(l, r)
+
+            l = i
+            r = i + 1
+            find_palindrome(l, r)
+
+        return nr_palin
