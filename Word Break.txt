@@ -1,0 +1,62 @@
+Word Break
+
+Given a string s and a dictionary of strings wordDict, return true if s can be segmented into a space-separated sequence of dictionary words.
+
+You are allowed to reuse words in the dictionary an unlimited number of times. You may assume all dictionary words are unique.
+
+Input: s = "neetcode", wordDict = ["neet","code"]
+
+Output: true
+
+Explanation: Return true because "neetcode" can be split into "neet" and "code".
+
+Input: s = "applepenapple", wordDict = ["apple","pen","ape"]
+
+Output: true
+
+Explanation: Return true because "applepenapple" can be split into "apple", "pen" and "apple". Notice that we can reuse words and also not use all the words.
+
+Input: s = "catsincars", wordDict = ["cats","cat","sin","in","car"]
+
+Output: false
+
+Constraints:
+
+1 <= s.length <= 200
+1 <= wordDict.length <= 100
+1 <= wordDict[i].length <= 20
+s and wordDict[i] consist of only lowercase English letters.
+
+T : O(nmt)
+S : O(n)
+
+Where 
+
+n is the length of the string s, 
+m is the number of words in wordDict and 
+t is the maximum length of any word in wordDict.
+
+class Solution:
+    def wordBreak(self, s: str, wordDict: List[str]) -> bool:
+        dp = {}
+        dp[len(s)] = True
+
+        def recurse(i):
+            # If i position is evaluated, then return that instead of evaluating again
+            if i in dp:
+                return dp[i]
+
+            # Choose word from dictionary and search in string
+            # If found, go for next breaking in string
+            for word in wordDict:
+                if ((i + len(word)) <= len(s) and s[i : i + len(word)] == word):
+                    if recurse(i + len(word)):
+                        dp[i] = True
+                        return True
+
+            # wordDict is exhausted, return false.
+            dp[i] = False
+            return False
+
+        return recurse(0)
+
