@@ -1,0 +1,84 @@
+Coin Change II
+
+You are given an integer array coins representing coins of different denominations (e.g. 1 dollar, 5 dollars, etc) and an integer amount representing a target amount of money.
+
+Return the number of distinct combinations that total up to amount. If it's impossible to make up the amount, return 0.
+
+You may assume that you have an unlimited number of each coin and that each value in coins is unique.
+
+Input: amount = 4, coins = [1,2,3]
+
+Output: 4
+
+Explanation:
+
+1+1+1+1 = 4
+1+1+2 = 4
+2+2 = 4
+1+3 = 4
+
+Input: amount = 7, coins = [2,4]
+
+Output: 0
+
+Constraints:
+
+1 <= coins.length <= 100
+1 <= coins[i] <= 1000
+0 <= amount <= 1000
+
+class Solution:
+    def change(self, amount: int, coins: List[int]) -> int:
+        # DP
+        dp = []
+        num_coins = len(coins)
+        # To avoid choosing duplicates, sort the coins array.
+        coins.sort()
+
+        for c in range(num_coins + 1):
+            dp.append([-1] * (amount + 1))
+
+        def changeCore(i, amount):
+            if i >= len(coins):
+                return 0
+
+            if amount == 0:
+                return 1
+
+            if dp[i][amount] != -1:
+                return dp[i][amount]
+
+            ways = 0
+            if coins[i] <= amount:
+                ways = changeCore(i, amount - coins[i])
+                ways += changeCore(i + 1, amount)
+
+            dp[i][amount] = ways
+            return ways
+
+        ways = changeCore(0, amount)
+        return ways
+
+        # Recursion
+        if len(coins) == 0:
+            return 0
+
+        # To avoid choosing duplicates, sort the coins array.
+        coins.sort()
+
+        def changeCore(i, amount):
+            if i >= len(coins):
+                return 0
+
+            if amount == 0:
+                return 1
+
+            ways = 0
+            if amount >= coins[i]:
+                ways = changeCore(i, amount - coins[i])
+                ways += changeCore(i + 1, amount)
+
+            return ways
+
+        ways = changeCore(0, amount)
+        return ways
