@@ -1,0 +1,55 @@
+Target Sum
+
+You are given an array of integers nums and an integer target.
+
+For each number in the array, you can choose to either add or subtract it to a total sum.
+
+For example, if nums = [1, 2], one possible sum would be "+1-2=-1".
+If nums=[1,1], there are two different ways to sum the input numbers to get a sum of 0: "+1-1" and "-1+1".
+
+Return the number of different ways that you can build the expression such that the total sum equals target.
+
+Input: nums = [2,2,2], target = 2
+
+Output: 3
+
+Explanation: There are 3 different ways to sum the input numbers to get a sum of 2.
++2 +2 -2 = 2
++2 -2 +2 = 2
+-2 +2 +2 = 2
+
+Constraints:
+
+1 <= nums.length <= 20
+0 <= nums[i] <= 1000
+-1000 <= target <= 1000
+
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -> int:
+        # DP
+        dp = {}
+
+        def core(i, total):
+            if i == len(nums):
+                return total == target
+
+            if (i, total) in dp:
+                return dp[(i, total)]
+
+            res = core(i + 1, total + nums[i]) + core(i + 1, total - nums[i])
+            dp[(i, total)] = res
+            return res
+
+        return core(0, 0)
+
+        # Recursive solution
+        def core(i, total):
+            if total == target and i == len(nums):
+                return 1
+
+            if i >= len(nums):
+                return 0
+
+            return core(i + 1, total + nums[i]) + core(i + 1, total - nums[i])
+
+        return core(0, 0)
