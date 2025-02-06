@@ -1,0 +1,60 @@
+Hand of Straights
+
+You are given an integer array hand where hand[i] is the value written on the ith card and an integer groupSize.
+
+You want to rearrange the cards into groups so that each group is of size groupSize, and card values are consecutively increasing by 1.
+
+Return true if it's possible to rearrange the cards in this way, otherwise, return false.
+
+
+Input: hand = [1,2,4,2,3,5,3,4], groupSize = 4
+
+Output: true
+
+Explanation: The cards can be rearranged as [1,2,3,4] and [2,3,4,5].
+
+Input: hand = [1,2,3,3,4,5,6,7], groupSize = 4
+
+Output: false
+
+Explanation: The closest we can get is [1,2,3,4] and [3,5,6,7], but the cards in the second group are not consecutive.
+
+Constraints:
+
+1 <= hand.length <= 1000
+0 <= hand[i] <= 1000
+1 <= groupSize <= hand.length
+
+class Solution:
+    def isNStraightHand(self, hand: List[int], groupSize: int) -> bool:
+        if len(hand) % groupSize != 0:
+            return False
+        
+        nr_groups = len(hand) // groupSize
+        hand.sort()
+        groups = {}
+        for i in range(0, nr_groups):
+            groups[i] = []
+
+        def get_suitable_group(num):
+            group = -1
+            for i in range(0, nr_groups):
+                nums = groups[i]
+
+                if len(nums) == groupSize:
+                    continue
+
+                if len(nums) == 0 or num - nums[len(nums) - 1] == 1:
+                    group = i
+                    nums.append(num)
+                    break
+
+            return group
+
+        for num in hand:
+            # Check suitable group for num
+            group = get_suitable_group(num)
+            if group == -1:
+                return False
+
+        return True
