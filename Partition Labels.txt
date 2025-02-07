@@ -1,0 +1,44 @@
+Partition Labels
+
+You are given a string s consisting of lowercase english letters.
+
+We want to split the string into as many substrings as possible, while ensuring that each letter appears in at most one substring.
+
+Return a list of integers representing the size of these substrings in the order they appear in the string.
+
+Input: s = "xyxxyzbzbbisl"
+
+Output: [5, 5, 1, 1, 1]
+
+Explanation: The string can be split into ["xyxxy", "zbzbb", "i", "s", "l"].
+
+Input: s = "abcabc"
+
+Output: [6]
+
+Constraints:
+
+1 <= s.length <= 100
+
+class Solution:
+    def partitionLabels(self, s: str) -> List[int]:
+        res_list = []
+        char_dict = {}
+        for i in range(0, len(s)):
+            ch = s[i]
+            char_dict[ch] = i
+
+        i = last_idx = start = end = 0
+
+        while i < len(s):
+            ch = s[i]
+            last_idx = char_dict[ch]
+            end = max(end, last_idx)
+            
+            if i == end:
+                res_list.append(end - start + 1)
+                start = i + 1
+
+            i += 1
+
+        return res_list
