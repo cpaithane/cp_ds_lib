@@ -1,0 +1,57 @@
+Insert Interval
+
+You are given an array of non-overlapping intervals intervals where intervals[i] = [start_i, end_i] represents the start and the end time of the ith interval. intervals is initially sorted in ascending order by start_i.
+
+You are given another interval newInterval = [start, end].
+
+Insert newInterval into intervals such that intervals is still sorted in ascending order by start_i and also intervals still does not have any overlapping intervals. You may merge the overlapping intervals if needed.
+
+Return intervals after adding newInterval.
+
+Note: Intervals are non-overlapping if they have no common point. For example, [1,2] and [3,4] are non-overlapping, but [1,2] and [2,3] are overlapping.
+
+Input: intervals = [[1,3],[4,6]], newInterval = [2,5]
+
+Output: [[1,6]]
+
+Input: intervals = [[1,2],[3,5],[9,10]], newInterval = [6,7]
+
+Output: [[1,2],[3,5],[6,7],[9,10]]
+
+Constraints:
+
+0 <= intervals.length <= 1000
+newInterval.length == intervals[i].length == 2
+0 <= start <= end <= 1000
+
+class Solution:
+    def insert(self, intervals: List[List[int]], newInterval: List[int]) -> List[List[int]]:
+        # Synthesize res_list by traversing the intervals list
+        # First part will consist of intervals which don't overlap
+        # Second part will consist of overlapping interval.
+        # min(newInterval[0], intervals[i][0]), max(newInterval[1], intervals[1])
+        # Third part will consist of all remaining intervals
+
+        res_list = []
+        i = 0
+        n = len(intervals)
+
+        # First part
+        while i < n and intervals[i][1] < newInterval[0]:
+            res_list.append(intervals[i])
+            i += 1
+
+        # Merge part, there will be only one newInterval to be merged
+        while i < n and newInterval[1] >= intervals[i][0]:
+            newInterval[0] = min(newInterval[0], intervals[i][0])
+            newInterval[1] = max(newInterval[1], intervals[i][1])
+            i += 1
+
+        res_list.append(newInterval)
+
+        # Third part
+        while i < n:
+            res_list.append(intervals[i])
+            i += 1
+
+        return res_list
