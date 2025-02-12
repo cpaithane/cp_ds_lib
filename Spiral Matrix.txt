@@ -1,0 +1,61 @@
+Spiral Matrix
+
+Given an m x n matrix of integers matrix, return a list of all elements within the matrix in spiral order.
+
+Input: matrix = [[1,2],[3,4]]
+
+Output: [1,2,4,3]
+
+Input: matrix = [[1,2,3],[4,5,6],[7,8,9]]
+
+Output: [1,2,3,6,9,8,7,4,5]
+
+Input: matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]
+
+Output: [1,2,3,4,8,12,11,10,9,5,6,7]
+
+Constraints:
+
+1 <= matrix.length, matrix[i].length <= 10
+-100 <= matrix[i][j] <= 100
+
+class Solution:
+    def spiralOrder(self, matrix: List[List[int]]) -> List[int]:
+        # top and left starts from 0
+        # bottom is no. of rows, right is no. of cols.
+        top = 0
+        bottom = len(matrix)
+        
+        left = 0
+        right = len(matrix[0])
+        res_list = []
+
+        while left < right and top < bottom:
+            # Go from left -> right, col will change
+            for i in range(left, right):
+                res_list.append(matrix[top][i])
+
+            top += 1
+
+            # Go from top -> bottom, row will change
+            for i in range(top, bottom):
+                res_list.append(matrix[i][right - 1])
+            
+            right -= 1
+
+            if not (left < right and top < bottom):
+                break
+
+            # Go from right -> left, col will change
+            for i in range(right - 1, left - 1, -1):
+                res_list.append(matrix[bottom - 1][i])
+
+            bottom -= 1
+
+            # Go from bottom -> top, row will change
+            for i in range(bottom - 1, top - 1, -1):
+                res_list.append(matrix[i][left])
+
+            left += 1
+
+        return res_list
