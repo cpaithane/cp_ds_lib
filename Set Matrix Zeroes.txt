@@ -1,0 +1,84 @@
+Set Matrix Zeroes
+
+Given an m x n matrix of integers matrix, if an element is 0, set its entire row and column to 0's.
+
+You must update the matrix in-place.
+
+Follow up: Could you solve it using O(1) space?
+
+Input: matrix = [
+  [0,1],
+  [1,1]
+]
+
+Output: [
+  [0,0],
+  [0,1]
+]
+
+Input: matrix = [
+  [1,2,3],
+  [4,0,5],
+  [6,7,8]
+]
+
+Output: [
+  [1,0,3],
+  [0,0,0],
+  [6,0,8]
+]
+
+Constraints:
+
+1 <= matrix.length, matrix[0].length <= 100
+-2^31 <= matrix[i][j] <= (2^31) - 1
+
+class Solution:
+    def setZeroes(self, matrix: List[List[int]]) -> None:
+        # Don't zero out first row and col
+        rows = len(matrix)
+        cols = len(matrix[0])
+        rowZero = False
+
+        for r in range(0, rows):
+            for c in range(0, cols):
+                if matrix[r][c] == 0:
+                    # Zero out first element of the col.
+                    matrix[0][c] = 0
+                    if r == 0:
+                        rowZero = True
+                    else:
+                        # Zero out first element of the row.
+                        matrix[r][0] = 0
+
+        # If for any row or col, first element is zero, zero entire row.
+        for r in range(1, rows):
+            for c in range(1, cols):
+                if matrix[0][c] == 0 or matrix[r][0] == 0:
+                    matrix[r][c] = 0
+
+        if matrix[0][0] == 0:
+            for r in range(0, rows):
+                matrix[r][0] = 0
+
+        if rowZero:
+            for c in range(0, cols):
+                matrix[0][c] = 0
+
+        return
+
+        r_set = set()
+        c_set = set()
+        rows = len(matrix)
+        cols = len(matrix[0])
+
+        for r in range(0, rows):
+            for c in range(0, cols):
+                if matrix[r][c] == 0:
+                    r_set.add(r)
+                    c_set.add(c)
+
+        for r in range(0, rows):
+            for c in range(0, cols):
+                if r in r_set or c in c_set:
+                    matrix[r][c] = 0
