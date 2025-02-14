@@ -1,0 +1,63 @@
+Multiply Strings
+
+You are given two strings num1 and num2 that represent non-negative integers.
+
+Return the product of num1 and num2 in the form of a string.
+
+Assume that neither num1 nor num2 contain any leading zero, unless they are the number 0 itself.
+
+Note: You can not use any built-in library to convert the inputs directly into integers.
+
+Input: num1 = "3", num2 = "4"
+
+Output: "12"
+
+Input: num1 = "111", num2 = "222"
+
+Output: "24642"
+
+Constraints:
+
+1 <= num1.length, num2.length <= 200
+num1 and num2 consist of digits only.
+
+class Solution:
+    def multiply(self, num1: str, num2: str) -> str:
+        tmp_list = []
+
+        def do_mult(digit, num1):
+            res = 0
+            carry = 0
+            local_mult = 0
+            mult = 1
+            for n in range(len(num1) - 1, -1, -1):
+                local_mult = carry + (digit * int(num1[n]))
+                carry = local_mult // 10
+                local_mult = local_mult % 10
+                res += local_mult * mult
+                mult = mult * 10
+
+            res = res + carry * mult
+            return res
+
+        mult = 1
+        for i in range(len(num2) - 1, -1, -1):
+            digit = int(num2[i])
+            local_mult = do_mult(digit, num1) * mult
+            tmp_list.append(local_mult)
+            mult = mult * 10
+
+        total = 0
+        for tmp in tmp_list:
+            total += tmp
+
+        if total == 0:
+            return "0"
+
+        res = ""
+        while total != 0:
+            digit = total % 10
+            total = total // 10
+            res = str(digit) + res
+
+        return res
