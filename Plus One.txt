@@ -1,0 +1,45 @@
+Plus One
+
+You are given an integer array digits, where each digits[i] is the ith digit of a large integer. It is ordered from most significant to least significant digit, and it will not contain any leading zero.
+
+Return the digits of the given integer after incrementing it by one.
+
+Input: digits = [1,2,3,4]
+
+Output: [1,2,3,5]
+
+Explanation 1234 + 1 = 1235.
+
+Input: digits = [9,9,9]
+
+Output: [1,0,0,0]
+
+Constraints:
+
+1 <= digits.length <= 100
+0 <= digits[i] <= 9
+
+class Solution:
+    def plusOne(self, digits: List[int]) -> List[int]:
+        size = len(digits) - 1
+        carry = 0
+        total = 0
+        res_list = []
+
+        for i in range(size, -1, -1):
+            if i == len(digits) - 1:
+                total = carry + digits[i] + 1
+            else:
+                total = carry + digits[i]
+
+            carry = total // 10
+            res_list.append(total % 10)
+
+        if total >= 10:
+            res_list.append(total // 10)
+
+        tmp_list = []
+        for num in reversed(res_list):
+            tmp_list.append(num)
+
+        return tmp_list
