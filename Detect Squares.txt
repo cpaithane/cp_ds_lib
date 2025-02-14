@@ -1,0 +1,66 @@
+Detect Squares
+
+You are given a stream of points consisting of x-y coordinates on a 2-D plane. Points can be added and queried as follows:
+
+Add - new points can be added to the stream into a data structure. Duplicate points are allowed and should be treated as separate points.
+Query - Given a single query point, count the number of ways to choose three additional points from the data structure such that the three points and the query point form a square. The square must have all sides parallel to the x-axis and y-axis, i.e. no diagonal squares are allowed. Recall that a square must have four equal sides.
+
+Implement the CountSquares class:
+
+CountSquares() Initializes the object.
+void add(int[] point) Adds a new point point = [x, y].
+int count(int[] point) Counts the number of ways to form valid squares with point point = [x, y] as described above.
+
+Input: 
+["CountSquares", "add", [[1, 1]], "add", [[2, 2]], "add", [[1, 2]], "count", [[2, 1]], "count", [[3, 3]], "add", [[2, 2]], "count", [[2, 1]]]
+       
+Output:
+[null, null, null, null, 1, 0, null, 2]
+
+Explanation:
+CountSquares countSquares = new CountSquares();
+countSquares.add([1, 1]);
+countSquares.add([2, 2]);
+countSquares.add([1, 2]);
+
+countSquares.count([2, 1]);   // return 1.
+countSquares.count([3, 3]);   // return 0.
+countSquares.add([2, 2]);     // Duplicate points are allowed.
+countSquares.count([2, 1]);   // return 2. 
+
+Constraints:
+
+point.length == 2
+0 <= x, y <= 1000
+
+class CountSquares:
+
+    def __init__(self):
+        self.pts_count = {}
+        self.pts = []
+
+    def add(self, point: List[int]) -> None:
+        count = self.pts_count.get((point[0], point[1]), 0)
+        self.pts_count[(point[0], point[1])] = count + 1
+        self.pts.append(point)
+
+    def count(self, point: List[int]) -> int:
+        qx = point[0]
+        qy = point[1]
+        res = 0
+
+        for p in self.pts:
+            x = p[0]
+            y = p[1]
+
+            # Check diagonal. Difference between diagonal and query point
+            # must be equal. Or x and y coordinates must not match with query
+            # point.
+            if (abs(qx - x) != abs(qy - y)) or x == qx or y == qy:
+                continue
+            
+            # Diagonal is found. Let's check for two adjacent points.
+            # As there can be multiple entries for the same point, let's multiply
+            res += self.pts_count.get((qx, y), 0) * self.pts_count.get((x, qy), 0)
+
+        return res
