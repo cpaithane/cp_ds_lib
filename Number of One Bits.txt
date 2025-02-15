@@ -1,0 +1,23 @@
+Number of One Bits
+
+You are given an unsigned integer n. Return the number of 1 bits in its binary representation.
+
+You may assume n is a non-negative integer which fits within 32-bits.
+
+Input: n = 00000000000000000000000000010111
+
+Output: 4
+
+Input: n = 01111111111111111111111111111101
+
+Output: 30
+
+class Solution:
+    def hammingWeight(self, n: int) -> int:
+        nr_set = 0
+
+        while n != 0:
+            n = n & (n - 1)
+            nr_set += 1
+
+        return nr_set
