@@ -1,0 +1,84 @@
+Extra characters in a string
+
+You are given a 0-indexed string s and a dictionary of words dictionary. You have to break s into one or more non-overlapping substrings such that each substring is present in dictionary. There may be some extra characters in s which are not present in any of the substrings.
+
+Return the minimum number of extra characters left over if you break up s optimally.
+
+Example 1:
+
+Input: s = "leetscode", dictionary = ["leet","code","leetcode"]
+Output: 1
+Explanation: We can break s in two substrings: "leet" from index 0 to 3 and "code" from index 5 to 8. There is only 1 unused character (at index 4), so we return 1.
+
+Example 2:
+
+Input: s = "sayhelloworld", dictionary = ["hello","world"]
+Output: 3
+Explanation: We can break s in two substrings: "hello" from index 3 to 7 and "world" from index 8 to 12. The characters at indices 0, 1, 2 are not used in any substring and thus are considered as extra characters. Hence, we return 3.
+
+Constraints:
+
+1 <= s.length <= 50
+1 <= dictionary.length <= 50
+1 <= dictionary[i].length <= 50
+dictionary[i] and s consists of only lowercase English letters
+dictionary contains distinct words
+
+#
+# Basic algorithm is use recursion + dynamic programming + Trie.
+# If there are no extra characters, one would go end of the string. This is base condition in which we will return 0.
+# Else go for choosing characters from i -> j. If s[i:j+1] is in dictionary, then go for next choosing next character j + 1.
+# final result will be min of both.
+# Trie will improve the result if recursion is done when word ends.
+#
+
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.ends = False
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def add_word(self, word):
+        cur_node = self.root
+
+        for ch in word:
+            if ch not in cur_node.children:
+                cur_node.children[ch] = TrieNode()
+            
+            cur_node = cur_node.children[ch]
+
+        cur_node.ends = True
+
+class Solution:
+    def minExtraChar(self, s: str, dictionary: List[str]) -> int:
+        dp = {len(s) : 0}
+        trie = Trie()
+
+        for word in dictionary:
+            trie.add_word(word)
+
+        def recursive(i):
+            if i >= len(s):
+                return 0
+
+            if i in dp:
+                return dp[i]
+
+            res = 1 + recursive(i + 1)
+            cur_node = trie.root
+
+            for j in range(i, len(s)):
+                if s[j] not in cur_node.children:
+                    break
+
+                cur_node = cur_node.children[s[j]]
+                if cur_node.ends:
+                    res = min(res, recursive(j + 1))
+
+            dp[i] = res
+            return res
+
+        return recursive(0)
