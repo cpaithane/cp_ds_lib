@@ -1,0 +1,61 @@
+Reorganize string
+
+Given a string s, rearrange the characters of s so that any two adjacent characters are not the same.
+
+Return any possible rearrangement of s or return "" if not possible.
+
+ 
+
+Example 1:
+
+Input: s = "aab"
+Output: "aba"
+Example 2:
+
+Input: s = "aaab"
+Output: ""
+ 
+
+Constraints:
+
+1 <= s.length <= 500
+s consists of lowercase English letters.
+
+class Solution:
+    def reorganizeString(self, s: str) -> str:
+        freq = {}
+
+        for c in s:
+            cnt = 1 + freq.get(c, 0)
+            freq[c] = cnt
+
+        max_heap = []
+        for c, f in freq.items():
+            heapq.heappush(max_heap, (-1 * f, c))
+
+        res = []
+        prev = None
+        while len(max_heap) != 0 or prev != None:
+            if prev and not max_heap:
+                return ""
+
+            f, c = heapq.heappop(max_heap)
+            f = -1 * f
+
+            res.append(c)
+            f -= 1
+
+            # The char is popped from max_heap, let's not push the char again in the same
+            # iteration. Instead push the prev char if available. And, evaluate prev if freq is
+            # not 0.
+            # This way, if prev is valid and max_heap is exhausted then adjacency condition will not
+            # match, so return "". Run this till max_heap is exhausted and prev is None.
+
+            if prev:
+                heapq.heappush(max_heap, prev)
+                prev = None
+
+            if f != 0:
+                prev = (-1 * f, c)
+
+        return "".join(res)
