@@ -1,0 +1,59 @@
+Critical and pseudo critical paths
+
+Given a weighted undirected connected graph with n vertices numbered from 0 to n - 1, and an array edges where edges[i] = [ai, bi, weighti] represents a bidirectional and weighted edge between nodes ai and bi. A minimum spanning tree (MST) is a subset of the graph's edges that connects all vertices without cycles and with the minimum possible total edge weight.
+
+Find all the critical and pseudo-critical edges in the given graph's minimum spanning tree (MST). An MST edge whose deletion from the graph would cause the MST weight to increase is called a critical edge. On the other hand, a pseudo-critical edge is that which can appear in some MSTs but not all.
+
+Note that you can return the indices of the edges in any order.
+
+ Input: n = 5, edges = [[0,1,1],[1,2,1],[2,3,2],[0,3,2],[0,4,3],[3,4,3],[1,4,6]]
+Output: [[0,1],[2,3,4,5]]
+Explanation: The figure above describes the graph.
+The following figure shows all the possible MSTs:
+
+class Solution:
+    def findCriticalAndPseudoCriticalEdges(self, n: int, edges: List[List[int]]) -> List[List[int]]:
+        # Need to preserve the order of edges
+        for i, e in enumerate(edges):
+            e.append(i)
+
+        adj_list = {}
+        for i in range(0, n):
+            adj_list[i] = []
+
+        for i, j, w, idx in edges:
+            adj_list[i].append((j, w, idx))
+            adj_list[j].append((i, w, idx))
+
+        def min_max(src, dest, excl_idx):
+            dist = [float("inf")] * n
+            min_heap = []
+            dist[src] = 0
+            heapq.heappush(min_heap, (0, src))
+
+            while min_heap:
+                max_w, u = heapq.heappop(min_heap)
+                if u == dest:
+                    return max_w
+
+                for node, node_wt, idx in adj_list[u]:
+                    if idx == excl_idx:
+                        continue
+
+                    new_wt = max(node_wt, max_w)
+                    if new_wt < dist[node]:
+                        dist[node] = new_wt
+                        heapq.heappush(min_heap, (new_wt, node))
+
+            return float("inf")
+
+        crit = []
+        psuedo = []
+
+        for i, j, w, idx in edges:
+            if w < min_max(i, j, idx):
+                crit.append(idx)
+            elif w == min_max(i, j, -1):
+                psuedo.append(idx)
+
+        return [crit, psuedo]
